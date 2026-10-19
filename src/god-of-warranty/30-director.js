@@ -49,7 +49,7 @@ const pt = (x, y, z) => () => V3(x, y, z);
 
 // ---- control handoffs ----
 function cine(o = {}) {
-  G.mode = 'cine'; DIR.skippable = o.skippable !== false;
+  G.mode = 'cine'; DIR.skippable = o.skippable !== false; DIR.cineT = performance.now();
   if (PLAYER) { PLAYER.control = false; if (PLAYER.state !== 'dead') toState('cine'); PLAYER.vel.set(0, 0, 0); PLAYER.aiming = false; CAM.aiming = false; PLAYER.shieldUp = false; PLAYER.carry = o.carry || false; }
   INPUT.weightTarget = 0; UI.hud(false);
   CHASE.ai = false;

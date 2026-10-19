@@ -25,7 +25,7 @@ A story-first, one-take action parody (God of War, 2018 × an Optus store), buil
 | Runic Promos | 1 / 2 | LB + RB / LB + RT |
 | Pause · hold to skip a cinematic | Esc | Menu |
 
-Touch controls appear automatically on touch devices. Every key can be rebound under **Settings → Controls**. Settings also cover difficulty, graphics quality, subtitles (size, background, speaker names), camera shake and handheld sway, depth of field, film grain, chromatic aberration, motion blur, field of view, aim assist, hold-vs-toggle for aim and shield, colour-blind palettes, slower enemy tells, and audio mix.
+Click the game to capture the mouse (Esc releases it and pauses). On-screen touch controls appear only when you're actually using touch — on phones and tablets, or after touching the screen of a touch laptop; moving the mouse or pressing a key switches back. Every key can be rebound under **Settings → Controls**. Settings also cover difficulty, graphics quality, subtitles (size, background, speaker names), camera shake and handheld sway, depth of field, film grain, chromatic aberration, motion blur, field of view, aim assist, hold-vs-toggle for aim and shield, colour-blind palettes, slower enemy tells, and audio mix.
 
 Progress is saved at each checkpoint in `localStorage`; **Continue** on the title screen resumes from the last one.
 

@@ -7,7 +7,13 @@ import * as THREE from 'three';
 
 const DEBUG = /[?&]debug=1/.test(location.search);
 const URLQ = new URLSearchParams(location.search);
-const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+// HAS_TOUCH: a touch screen exists (touch laptops included). IS_TOUCH: touch is the main input (phones, tablets).
+// Touch is assumed only when there is no mouse or trackpad at all, or on a mobile browser whose primary pointer is a finger
+// (stylus phones report a fine pointer too). Everything else starts on mouse; touching the screen switches to touch controls.
+const HAS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+const mediaQ = q => !!(window.matchMedia && window.matchMedia(q).matches);
+const MOBILE_UA = navigator.userAgentData ? !!navigator.userAgentData.mobile : /Android|iPhone|iPod|Mobile/i.test(navigator.userAgent);
+const IS_TOUCH = HAS_TOUCH && (!mediaQ('(any-pointer: fine)') || (MOBILE_UA && mediaQ('(pointer: coarse)')));
 const HUB_URL = '../index.html';
 
 const QUALITY = {

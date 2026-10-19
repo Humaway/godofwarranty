@@ -281,13 +281,14 @@ function badgeTex(name, role, back) {
     g.fillStyle = '#10272c'; g.font = 'bold 16px Barlow, sans-serif'; drawLines(g, [name], w / 2, 30, 0); g.font = '600 9px Barlow, sans-serif'; drawLines(g, [role], w / 2, 47, 0);
   });
 }
-function addLanyard(a, name, role, { back = false, cord = 0x0f8a8a, torc = false } = {}) {
+// out: how far in front of the chest bone the badge hangs (in heights), clear of bulky outer layers
+function addLanyard(a, name, role, { back = false, cord = 0x0f8a8a, torc = false, out = 0.072 } = {}) {
   const H = a.height, ch = a.bones.chest;
   const cg = new GB();
   if (torc) cg.torus(0.045 * H, 0.006 * H, 4, 14, { pos: [0, 0.15 * H, 0.008 * H], rot: [PI / 2 - 0.25, 0, 0], color: cord });
-  else { cg.strut([0.045 * H, 0.155 * H, 0.01 * H], [0.012 * H, 0.06 * H, 0.068 * H], 0.008 * H, { color: cord, depth: 0.002 * H }); cg.strut([-0.045 * H, 0.155 * H, 0.01 * H], [-0.012 * H, 0.06 * H, 0.068 * H], 0.008 * H, { color: cord, depth: 0.002 * H }); }
+  else { cg.strut([0.045 * H, 0.155 * H, 0.01 * H], [0.012 * H, 0.06 * H, (out - 0.004) * H], 0.008 * H, { color: cord, depth: 0.002 * H }); cg.strut([-0.045 * H, 0.155 * H, 0.01 * H], [-0.012 * H, 0.06 * H, (out - 0.004) * H], 0.008 * H, { color: cord, depth: 0.002 * H }); }
   const cm = cg.mesh(MATS.vcNoSnow); ch.add(cm);
-  const holder = new THREE.Group(); holder.position.set(0, 0.06 * H, 0.072 * H); ch.add(holder);
+  const holder = new THREE.Group(); holder.position.set(0, 0.06 * H, out * H); ch.add(holder);
   const front = new THREE.Mesh(new THREE.PlaneGeometry(0.05 * H, 0.033 * H), new THREE.MeshLambertMaterial({ map: badgeTex(name, role) }));
   front.position.y = -0.016 * H; holder.add(front);
   if (back) { const bk = new THREE.Mesh(new THREE.PlaneGeometry(0.05 * H, 0.033 * H), new THREE.MeshLambertMaterial({ map: badgeTex('', '', true) })); bk.rotation.y = PI; bk.position.set(0, -0.016 * H, -0.001); holder.add(bk); }
@@ -375,7 +376,7 @@ function buildChase() {
   a.attach('chest', new GB().box(0.09, 0.62, 0.07, { color: 0xf2f2f2 }).box(0.092, 0.2, 0.072, { pos: [0, 0.12, 0], color: 0x19b5ad }).box(0.06, 0.06, 0.004, { pos: [0, -0.1, 0.037], color: 0xffcf1f }).mesh(MATS.vcNoSnow), [0.06, 0.05 * H, -0.12 * H], [0, 0, -0.35]);
   const bow = buildBow(); a.props.bow = bow;
   a.attach('chest', bow, [-0.04, 0.06 * H, -0.13 * H], [0, PI / 2, 0.5]); a.props.bowOnBack = true;
-  addLanyard(a, 'CHASE', 'CASUAL', { back: true });
+  addLanyard(a, 'CHASE', 'CASUAL', { back: true, out: 0.1 }); // over the puffer vest
   return a;
 }
 function chaseBowToHand(on) {

@@ -87,7 +87,7 @@ BEATS.kiosk = async () => {
 async function openKiosk(first) {
   const prevMode = G.mode; G.mode = 'menu';
   const res = await UI.openKiosk(first);
-  G.mode = prevMode === 'menu' ? 'play' : prevMode;
+  G.mode = prevMode === 'menu' ? 'play' : prevMode; requestLock(); // the Done click still counts as the gesture
   if (res === 'brothers') await brothersBit();
 }
 async function brothersBit() {
@@ -337,7 +337,8 @@ BEATS.queue = async () => {
   CAM.shotFn((t, p, a) => { const k = smoothstep(0, 10, t); p.set(lerp(37, 40, k), lerp(9.0, 13.5, k), lerp(149.5, 151, k)); a.set(lerp(43, 50, k), lerp(9.2, 9.6, k), lerp(144, 146, k)); }, { omega: 1.4, lens: 24, fStop: 4, handheld: 0.2 });
   CAM.focusOn(() => V3(44, 9.5, 144));
   await wait(5.5);
-  CAM.shotFn((t, p, a) => { const m = L.pos.clone().lerp(C.pos, 0.5); p.copy(m).add(V3(-2.4, 1.6, 2.0)); a.copy(m).add(V3(0.6, 1.4, 0)); }, { omega: 1.8, lens: 35, fStop: 2.8, handheld: 0.25 });
+  const qside = V3(37.5, 0, 148.5);
+  CAM.shotFn(SHOT.two(L, C, { from: qside, swing: 0.25, fill: 1.0 }), { omega: 1.8, lens: 35, fStop: 2.8, handheld: 0.25 });
   CAM.pull(head('chase'), 0.6);
   await say('chase', '(whisper) They’re… queuing.');
   CAM.pull(head('luka'), 0.5);
@@ -345,7 +346,7 @@ BEATS.queue = async () => {
   // Chase has already taken a ticket. The machine dings, bright and loud.
   place(C, T.pos.clone().add(V3(-0.6, 0, -0.6)).setY(groundHeight(T.pos.x - 0.6, T.pos.z - 0.6)), yawTo(T.pos.clone().add(V3(-0.6, 0, -0.6)), T.pos));
   sfx('ding', T.pos, 1.2);
-  CAM.shotFn((t, p, a) => { p.copy(C.pos).add(V3(-1.6, 1.65, -1.5)); a.copy(C.headWorld(_v[1])); }, { omega: 4, lens: 50, fStop: 2.4, handheld: 0.35 });
+  CAM.shotFn(SHOT.face(C, { yaw: 0.7, dist: 2.1, avoid: [L] }), { omega: 4, lens: 50, fStop: 2.4, handheld: 0.35 });
   CAM.pull(head('chase'), 0.4);
   await wait(1.0);
   act(C, 'tap');
@@ -355,9 +356,13 @@ BEATS.queue = async () => {
   for (const e of QUEUE) { const y0 = e.yaw, y1 = yawTo(e.pos, L.pos); tween(v => e.yaw = y0 + angleTo(y0, y1) * v, 0, 1, 0.35, EASE.outCubic); }
   sfx('crack', V3(43, 9, 144), 0.6);
   await wait(1.3);
-  CAM.shotFn((t, p, a) => { const m = L.pos.clone().lerp(C.pos, 0.5); p.copy(m).add(V3(-2.4, 1.6, 2.0)); a.copy(m).add(V3(0.6, 1.4, 0)); }, { omega: 3, lens: 35, fStop: 2.8, handheld: 0.35 });
-  CAM.pull(head('luka'), 0.4);
+  CAM.shotFn(SHOT.face(L, { yaw: 0.6, dist: 2.3, toward: C, k: 0.1 }), { omega: 5, lens: 50, fStop: 2.4, handheld: 0.35 });
+  CAM.pull(head('luka'), 0.3);
+  await wait(0.5);
   await say('luka', 'Casual.');
+  CAM.shotFn(SHOT.face(C, { yaw: 0.6, dist: 2.1, toward: L, k: 0.1 }), { omega: 5, lens: 50, fStop: 2.4, handheld: 0.35 });
+  CAM.pull(head('chase'), 0.3);
+  await wait(0.4);
   await say('chase', 'I know.');
   G.queueTick = false;
   // 8.2 — the fight: groups of 2–3 peel off; two 1-Star Reviewers on the toll-booth roof; a Hold-Music Churned mid-fight; a Brute closes it out
@@ -429,13 +434,19 @@ BEATS.hamarr = async () => {
   await wait(1.0);
   CAM.focusOn(head('hamarr'));
   await say('hamarr', 'TOLL.', { caps: true });
-  CAM.pull(head('chase'), 0.4);
+  const hero = () => CAM.shotFn((t, p, a) => { p.set(73 - t * 0.05, DECK.y + 0.55, 147.5); a.copy(b.headPos(_v[1])); }, { omega: 2.4, lens: 18, fStop: 5.6, handheld: 0.4 });
+  // quick whips between the three of them: the lines are short, so the operator snaps rather than drifts
+  CAM.shotFn(SHOT.face(C, { yaw: 0.6, dist: 2.2, toward: b.actor, k: 0.15, avoid: [L] }), { omega: 6.5, lens: 35, fStop: 2.8, handheld: 0.35 });
+  CAM.pull(head('chase'), 0.3);
+  await wait(0.35);
   await say('chase', 'Did he just say toll?');
-  CAM.pull(head('hamarr'), 0.4);
+  hero(); CAM.pull(head('hamarr'), 0.4);
   await say('hamarr', 'TOLL. OR. REVIEW.', { caps: true });
-  CAM.pull(head('luka'), 0.4);
+  CAM.shotFn(SHOT.face(L, { yaw: 0.55, dist: 2.3, dy: -0.35, toward: b.actor, k: 0.2, avoid: [C] }), { omega: 6.5, lens: 35, fStop: 2.8, handheld: 0.35 });
+  CAM.pull(head('luka'), 0.3);
+  await wait(0.4);
   await say('luka', 'Neither.');
-  CAM.pull(head('hamarr'), 0.4);
+  hero(); CAM.pull(head('hamarr'), 0.4);
   b.actor.anim.play('hSlam', { speed: 0.6 });
   await say('hamarr', '(raising the totem) WORST. SERVICE. EVER.', { caps: true });
   UI.bossBar(true, 'Dodgy Hamarr', 'Troll of the Comment Section');
@@ -522,8 +533,10 @@ async function runGood35(b) {
   await say('luka', '(getting up) …Good.', { slow: 1.2 });
   trophy('Good.');
   await wait(0.6);
+  CAM.shotFn(SHOT.face(C, { yaw: 0.6, dist: 2.3, toward: L, k: 0.15, avoid: [L] }), { omega: 2.6, lens: 50, fStop: 2.4, handheld: 0.3 });
   CAM.pull(head('chase'), 0.6);
   await say('chase', 'Did you just say “good”?');
+  CAM.shotFn(SHOT.face(L, { yaw: 0.8, dist: 2.4, toward: C, k: 0.15, avoid: [C] }), { omega: 2.6, lens: 50, fStop: 2.4, handheld: 0.3 });
   CAM.pull(head('luka'), 0.4);
   await say('luka', 'Shoot.');
   look(L, null);

@@ -60,6 +60,10 @@ function buildHUD() {
 function updateHUD(dt) {
   UI.hudA = damp(UI.hudA, UI.hudOn ? 1 : 0, UI.hudOn ? 1 / 0.8 * 3 : 1 / 0.5 * 3, dt);
   document.documentElement.style.setProperty('--hud-a', UI.hudA.toFixed(3));
+  // the touch controls only exist while touch is the device in use
+  const touchOn = INPUT.device === 'touch' && G.mode === 'play' && !UI.menuOpen();
+  $('touch').classList.toggle('on', touchOn); document.body.classList.toggle('touchUI', touchOn);
+  $('lockHint').classList.toggle('on', G.mode === 'play' && INPUT.device === 'kbm' && !INPUT.locked && !INPUT.lockFailed && !UI.menuOpen() && SETTINGS.pointerLock !== false);
   const P = PLAYER; if (!P) return;
   const k = clamp01(P.hp / P.maxHp);
   $('hpFill').style.transform = `scaleX(${k})`; $('hpLag').style.transform = `scaleX(${clamp01(P.hpLag / P.maxHp)})`;
@@ -76,8 +80,7 @@ function updateHUD(dt) {
   $('reticle').classList.toggle('on', P.aiming && UI.hudA > 0.5);
   if (BOSS && BOSS.alive) { $('bossFill').style.transform = `scaleX(${clamp01(BOSS.hp / BOSS.maxHp)})`; BOSS.hpLag = BOSS.hpLag == null ? BOSS.hp : Math.max(BOSS.hp, BOSS.hpLag - dt * 120); $('bossLag').style.transform = `scaleX(${clamp01(BOSS.hpLag / BOSS.maxHp)})`; $('bossStun').style.transform = `scaleX(${clamp01(BOSS.stun / BOSS.stunCap)})`; }
   // touch: rage button and contextual button
-  if (IS_TOUCH) {
-    $('touch').classList.toggle('on', G.mode === 'play' && !UI.menuOpen());
+  if (touchOn) {
     document.querySelector('[data-b="rage"]').classList.toggle('hide', !(P.rage >= 100 && !P.rageActive));
     const ctx = $('tCtx'); const show = !!(P.finisherTarget || currentInteract); ctx.classList.toggle('hide', !show); if (show) ctx.textContent = P.finisherTarget ? 'Close the Deal' : 'Interact';
     document.querySelector('[data-b="throw"]').textContent = P.axeState !== 'hand' ? 'Callback' : 'Throw';
@@ -174,13 +177,13 @@ UI.showTitle = (on) => {
     setTimeout(() => { t.style.opacity = 0; }, 900); setTimeout(() => { t.style.display = 'none'; }, 2200);
   }
 };
-function startGame() { if (G.mode !== 'title') return; beginShift(); }
+function startGame() { if (G.mode !== 'title') return; beginShift(); requestLock(); }
 function continueGame(cp) {
   if (G.mode !== 'title') return;
   loadProgress(); G.title = false; UI.showTitle(false); G.stats.startT = G.realTime;
   G.checkpoint = cp; G.mode = 'cine';
   R.post.fade = 0; $('fade').style.transition = 'none'; $('fade').style.opacity = 1;
-  runStory(cp);
+  runStory(cp); requestLock();
   setTimeout(() => { $('fade').style.transition = 'opacity 1.6s'; $('fade').style.opacity = 0; }, 500);
 }
 
@@ -194,12 +197,13 @@ UI.pause = (force) => {
   UI.prevMode = G.mode; G.mode = 'pause'; renderPause(); openScreen('pause');
   if (AUDIO.ok) AUDIO.ctx.suspend();
 };
-UI.resume = () => { closeScreen('pause'); closeScreen('settings'); G.mode = UI.prevMode || 'play'; if (AUDIO.ok) AUDIO.ctx.resume(); };
+UI.resume = () => { closeScreen('pause'); closeScreen('settings'); G.mode = UI.prevMode || 'play'; if (AUDIO.ok) AUDIO.ctx.resume(); requestLock(); };
 UI.togglePause = () => { if (G.mode === 'pause') UI.resume(); else UI.pause(); };
 function renderPause() {
   const p = $('pausePanel');
   p.innerHTML = `<h2>On Break</h2><p class="lede">${esc(CHECKPOINT_LABELS[G.checkpoint] || '')} · ${esc(diff().label)}</p><div class="stack" id="pauseItems"></div>`;
   const items = [['Resume', () => UI.resume()], ['Settings', () => UI.openSettings()], ['Controls', () => UI.openSettings('controls')], ['Training Modules', () => UI.openCodex()], ['Restart Checkpoint', () => { UI.resume(); callBack(); }], ['Quit to Title', () => quitToTitle()]];
+  if (UI.prevMode === 'cine' && DIR.skippable) items.splice(1, 0, ['Skip Scene', () => { UI.resume(); DIR.skipping = true; hideSub(); }]);
   const st = $('pauseItems');
   items.forEach(([l, f]) => { const b = el('button', 'opt', l); b.onclick = () => { sfx('ui'); f(); }; st.appendChild(b); });
 }
@@ -211,7 +215,7 @@ function quitToTitle() {
 }
 UI.showDeath = () => {
   openScreen('death'); $('btnCallBack').focus();
-  $('btnCallBack').onclick = () => { sfx('ui'); closeScreen('death'); callBack(); };
+  $('btnCallBack').onclick = () => { sfx('ui'); closeScreen('death'); callBack(); requestLock(); };
   $('btnChangePlan').onclick = () => { sfx('ui'); UI.openSettings('play', true); };
 };
 // ---------- settings (§13) ----------
@@ -255,7 +259,7 @@ UI.renderSettings = () => {
     const pad = el('p', 'small', 'Gamepad: RB light · RT heavy · LT aim · Y callback · LB shield · A dodge · X Chase · R3 Close the Deal · L3+R3 Rage · D-pad ↓ quick turn. Touch: left stick moves, drag right side to look.'); br.appendChild(pad);
     const rb = el('button', 'btn', 'Reset bindings'); rb.onclick = () => { SETTINGS.binds = {}; INPUT.binds = { ...DEFAULT_BINDS }; saveSettings(); UI.renderSettings(); }; br.appendChild(rb);
   }
-  $('setDone').onclick = () => { sfx('uiBack'); closeScreen('settings'); if (UI.setFromDeath) { closeScreen('death'); callBack(); } };
+  $('setDone').onclick = () => { sfx('uiBack'); closeScreen('settings'); if (UI.setFromDeath) { closeScreen('death'); callBack(); requestLock(); } };
 };
 UI.openCodex = () => {
   const p = $('setPanel');
@@ -362,12 +366,14 @@ UI.onKey = (e) => {
     else if (e.code === 'Enter' || e.code === 'Space') { const it = UI.titleItems[UI.titleSel]; if (it) { sfx('ui'); it[1](); } }
     return;
   }
-  if (e.code === 'Escape' && UI.menuStack.includes('settings')) { closeScreen('settings'); return; }
-  if (e.code === 'Escape' && UI.menuStack.includes('kiosk')) { closeScreen('kiosk'); UI.kioskRes && UI.kioskRes('done'); return; }
+  // Escape backs out of the top menu only: it must not also reach the pause toggle in tick()
+  if (e.code === 'Escape' && UI.menuStack.includes('settings')) { INPUT.pressed.delete('pause'); closeScreen('settings'); return; }
+  if (e.code === 'Escape' && UI.menuStack.includes('kiosk')) { INPUT.pressed.delete('pause'); closeScreen('kiosk'); UI.kioskRes && UI.kioskRes('done'); return; }
 };
 function updateSkipHint(realDt) {
   const sh = $('skipHint');
   const can = G.mode === 'cine' && DIR.skippable && !DIR.skipping;
-  if (can && INPUT.held.pause) { DIR.holdSkip += realDt; sh.classList.add('on'); sh.querySelector('.ring').style.setProperty('--p', Math.min(100, DIR.holdSkip * 100) + '%'); if (DIR.holdSkip >= 1) { DIR.skipping = true; DIR.holdSkip = 0; sh.classList.remove('on'); hideSub(); } }
+  // held for one second of wall-clock time (not frame time), counted from the press or the start of the cutscene
+  if (can && INPUT.held.pause) { DIR.holdSkip = (performance.now() - Math.max(INPUT.pausePressT, DIR.cineT || 0)) / 1000; sh.classList.add('on'); sh.querySelector('.ring').style.setProperty('--p', Math.min(100, DIR.holdSkip * 100) + '%'); if (DIR.holdSkip >= 1) { DIR.skipping = true; DIR.holdSkip = 0; sh.classList.remove('on'); hideSub(); } }
   else { DIR.holdSkip = 0; if (!can || !INPUT.held.pause) sh.classList.remove('on'); }
 }

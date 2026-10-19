@@ -198,7 +198,10 @@ function handleActions(mlen, mv, cancelOnly = false) {
     const k = P.comboT < 0.45 ? P.combo % 4 : 0;
     startAttack(['L1', 'L2', 'L3', 'L4'][k]); return;
   }
-  if (wasPressed('heavy') || consumeBuffered('heavy')) {
+  // E is both heavy attack and interact: next to something usable (and out of combat) it means interact
+  const using = currentInteract && wasPressed('interact') && !G.combat;
+  if (using) consumeBuffered('heavy');
+  if (!using && (wasPressed('heavy') || consumeBuffered('heavy'))) {
     if (P.weapon === 'wood') { startAttack('L1'); return; }
     if (P.rageActive) { startAttack('QUOTA'); return; }
     if (fists) { startAttack('FH'); return; }

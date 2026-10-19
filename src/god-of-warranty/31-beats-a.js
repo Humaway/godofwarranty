@@ -489,24 +489,27 @@ BEATS.pyre_start = async (carrying) => {
   await say('rue', 'Force of habit. Every call I’ve ever been on starts with someone blaming me for JARVIS.');
   // Chase turns the slate toward the pyre. Rue sees it. His face changes.
   await tween(v => slate.rotation.y = lerp(MARKS.slate_post.yaw + 0.3, MARKS.slate_post.yaw + 0.3 - 1.1, v), 0, 1, 1.0);
+  const slateFront = () => CAM.shotFn((t, p, a) => { const s = slateP(), n = slateN(); p.copy(s).addScaledVector(n, 1.05).add(V3(-n.z * 0.3, 0.1, n.x * 0.3)); a.copy(s); }, { omega: 2.2, lens: 50, fStop: 2.4, handheld: 0.25 });
+  slateFront(); CAM.pull(slateP, 0.8);
   RUE.actor.expr = null; RUE.actor.mouthOverride = null;
   nameCard('rue');
   await wait(1.0);
   await say('rue', 'Ah. Ah, it’s lovely. She’d hate it.');
   await wait(0.7);
   await say('rue', 'It’s lovely.');
-  CAM.shotFn((t, p, a) => { p.set(P.x - 3.4, py + 1.65, P.z + 3.2); a.copy(L.headWorld(_v[1])); }, { omega: 2.2, lens: 50, fStop: 2.0, handheld: 0.3 });
+  look(L, slateP, 1); turnTo(L, yawTo(L.pos, slate.position), 3);
+  CAM.shotFn(SHOT.face(L, { yaw: 0.45, dist: 2.4, avoid: [C, LU, ZA] }), { omega: 2.2, lens: 50, fStop: 2.0, handheld: 0.3 });
   CAM.pull(head('luka'), 0.8);
+  await wait(0.5);
   await say('luka', 'Rue.');
-  CAM.shotFn((t, p, a) => { const s = slateP(), n = slateN(); p.copy(s).addScaledVector(n, 1.05).add(V3(-n.z * 0.3, 0.1, n.x * 0.3)); a.copy(s); }, { omega: 2.2, lens: 50, fStop: 2.4, handheld: 0.25 });
-  CAM.pull(slateP, 0.8);
+  slateFront(); CAM.pull(slateP, 0.8);
   await say('rue', 'Head Office wouldn’t let me come down. Said a CEO hasn’t set foot in a store in thirty years, why start now. So I’m here the only way they allow. On a call. Which, as you know, I can’t hang up.', { dur: 9.5 });
   await say('chase', '(whispering to Luka) Why can’t he hang up?');
   await say('luka', 'Nobody knows.');
   await say('rue', 'I can hear you, Chase.');
   // Chase props the slate on the corner of the display table, facing everyone
   walk(C, V3(P.x - 1.4, py, P.z + 1.4), { speed: 1.1 }); await wait(1.2);
-  worldState({ slate: 'table' });
+  worldState({ slate: 'table' }); turnTo(L, PI / 2, 2);
   await walk(C, 'pyre_chase', { speed: 1.1 });
   await eulogy();
 };
@@ -525,8 +528,9 @@ async function eulogy() {
   CAM.pull(head('chase'), 2);
   await say('rue', 'Faye ran Store Zero-Zero-One for longer than any of you have been alive.', { dur: 4.2 });
   // drift to Chase. The wind has flipped his lanyard badge: for ~2 s the player can read the back, in Faye's handwriting.
-  const badgeP = () => C.props.badge.getWorldPosition(V3());
-  CAM.shotFn((t, p, a) => { const b = badgeP(); localToWorld(C, [0.32, 1.42, 0.95], p); a.copy(b).lerp(C.headWorld(_v[1]), 0.3); }, { omega: 1.5, lens: 50, fStop: 2.2, handheld: 0.25 });
+  const card = () => { const b = C.props.badge; return b.children[b.children.length - 1]; };
+  const badgeP = () => card().getWorldPosition(V3());
+  CAM.shotFn((t, p, a) => { const b = badgeP(), n = fwdFromYaw(C.yaw, _v[2]); p.copy(b).addScaledVector(n, 0.8).add(V3(-n.z * 0.12, 0.06, n.x * 0.12)); a.copy(b).lerp(C.headWorld(_v[1]), smoothstep(2.6, 5, t) * 0.8); }, { omega: 1.5, lens: 50, fStop: 2.8, handheld: 0.2 });
   const flip = tween(v => C.props.badge.rotation.y = v, 0, PI, 0.5);
   await say('rue', 'Well — longer than Chase has been employed, which in retail is the same thing.', { dur: 4.4 });
   C.expr = 2; later(1.2, () => { C.expr = null; });

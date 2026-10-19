@@ -87,6 +87,7 @@ button:focus-visible, .opt:focus-visible, select:focus-visible, input:focus-visi
 .screen { position: absolute; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(5,9,11,.62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); pointer-events: auto;
   padding: calc(16px + var(--safe-t)) max(16px, var(--safe-r)) calc(16px + var(--safe-b)) max(16px, var(--safe-l)); }
 .screen[hidden] { display: none !important; }
+#settings { z-index: 41; } /* Settings can open over the death screen (Change Plan) */
 .panel { width: min(560px, 100%); max-height: 100%; overflow: auto; padding: 26px 28px; }
 .panel h2 { margin: 0 0 4px; font-family: var(--f-display); font-weight: 900; letter-spacing: .2em; font-size: 26px; text-transform: uppercase; text-align: center; }
 .panel .lede { text-align: center; color: var(--frost-dim); margin: 0 0 18px; font-size: 13px; letter-spacing: .06em; }
@@ -227,6 +228,11 @@ button:focus-visible, .opt:focus-visible, select:focus-visible, input:focus-visi
 
 /* ---------- touch ---------- */
 #touch { position: absolute; inset: 0; z-index: 25; display: none; }
+/* with the touch controls up, the vitals and quick slots move above the stick and the button cluster */
+body.touchUI #hudBL { bottom: calc(186px + var(--safe-b)); }
+body.touchUI #hudBR { bottom: calc(260px + var(--safe-b)); }
+#lockHint { position: absolute; left: 50%; top: 58%; transform: translateX(-50%); z-index: 22; padding: 6px 14px; border-radius: 3px; background: rgba(0,0,0,.45); color: var(--frost-dim); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; pointer-events: none; opacity: 0; transition: opacity .4s; }
+#lockHint.on { opacity: 1; transition-delay: .6s; }
 #touch.on { display: block; }
 #tStick { position: absolute; left: calc(20px + var(--safe-l)); bottom: calc(20px + var(--safe-b)); width: 150px; height: 150px; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.18); }
 #tStick i { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.35); }
@@ -245,6 +251,7 @@ button:focus-visible, .opt:focus-visible, select:focus-visible, input:focus-visi
 #dbg { position: absolute; left: 8px; top: 8px; z-index: 70; font: 11px/1.35 ui-monospace, Menlo, Consolas, monospace; color: #bfe; background: rgba(0,0,0,.55); padding: 6px 8px; white-space: pre; pointer-events: none; }
 @media (max-width: 720px) {
   #hudBL { left: calc(14px + var(--safe-l)); bottom: calc(14px + var(--safe-b)); }
+  body.touchUI #hudBL { max-width: calc(100vw - 264px - var(--safe-l) - var(--safe-r)); } /* end left of the button cluster */
   #namecard { left: calc(16px + var(--safe-l)); bottom: calc(30vh + var(--safe-b)); }
   #subs { bottom: calc(40px + var(--safe-b)); }
   .stats { grid-template-columns: minmax(0, 1fr); }
@@ -286,6 +293,7 @@ button:focus-visible, .opt:focus-visible, select:focus-visible, input:focus-visi
   <div id="subs"><div class="ln" id="subLine"></div></div>
   <div id="namecard"><div class="stone"><div class="nm" id="ncName">LUKA</div><div class="rl" id="ncRole">2IC</div></div></div>
   <div id="skipHint"><span class="ring"></span><span>Hold to skip</span></div>
+  <div id="lockHint">Click to capture the mouse</div>
 
   <div id="title">
     <div class="logo">
@@ -339,7 +347,13 @@ import * as THREE from 'three';
 
 const DEBUG = /[?&]debug=1/.test(location.search);
 const URLQ = new URLSearchParams(location.search);
-const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+// HAS_TOUCH: a touch screen exists (touch laptops included). IS_TOUCH: touch is the main input (phones, tablets).
+// Touch is assumed only when there is no mouse or trackpad at all, or on a mobile browser whose primary pointer is a finger
+// (stylus phones report a fine pointer too). Everything else starts on mouse; touching the screen switches to touch controls.
+const HAS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+const mediaQ = q => !!(window.matchMedia && window.matchMedia(q).matches);
+const MOBILE_UA = navigator.userAgentData ? !!navigator.userAgentData.mobile : /Android|iPhone|iPod|Mobile/i.test(navigator.userAgent);
+const IS_TOUCH = HAS_TOUCH && (!mediaQ('(any-pointer: fine)') || (MOBILE_UA && mediaQ('(pointer: coarse)')));
 const HUB_URL = '../index.html';
 
 const QUALITY = {
@@ -1555,13 +1569,14 @@ function badgeTex(name, role, back) {
     g.fillStyle = '#10272c'; g.font = 'bold 16px Barlow, sans-serif'; drawLines(g, [name], w / 2, 30, 0); g.font = '600 9px Barlow, sans-serif'; drawLines(g, [role], w / 2, 47, 0);
   });
 }
-function addLanyard(a, name, role, { back = false, cord = 0x0f8a8a, torc = false } = {}) {
+// out: how far in front of the chest bone the badge hangs (in heights), clear of bulky outer layers
+function addLanyard(a, name, role, { back = false, cord = 0x0f8a8a, torc = false, out = 0.072 } = {}) {
   const H = a.height, ch = a.bones.chest;
   const cg = new GB();
   if (torc) cg.torus(0.045 * H, 0.006 * H, 4, 14, { pos: [0, 0.15 * H, 0.008 * H], rot: [PI / 2 - 0.25, 0, 0], color: cord });
-  else { cg.strut([0.045 * H, 0.155 * H, 0.01 * H], [0.012 * H, 0.06 * H, 0.068 * H], 0.008 * H, { color: cord, depth: 0.002 * H }); cg.strut([-0.045 * H, 0.155 * H, 0.01 * H], [-0.012 * H, 0.06 * H, 0.068 * H], 0.008 * H, { color: cord, depth: 0.002 * H }); }
+  else { cg.strut([0.045 * H, 0.155 * H, 0.01 * H], [0.012 * H, 0.06 * H, (out - 0.004) * H], 0.008 * H, { color: cord, depth: 0.002 * H }); cg.strut([-0.045 * H, 0.155 * H, 0.01 * H], [-0.012 * H, 0.06 * H, (out - 0.004) * H], 0.008 * H, { color: cord, depth: 0.002 * H }); }
   const cm = cg.mesh(MATS.vcNoSnow); ch.add(cm);
-  const holder = new THREE.Group(); holder.position.set(0, 0.06 * H, 0.072 * H); ch.add(holder);
+  const holder = new THREE.Group(); holder.position.set(0, 0.06 * H, out * H); ch.add(holder);
   const front = new THREE.Mesh(new THREE.PlaneGeometry(0.05 * H, 0.033 * H), new THREE.MeshLambertMaterial({ map: badgeTex(name, role) }));
   front.position.y = -0.016 * H; holder.add(front);
   if (back) { const bk = new THREE.Mesh(new THREE.PlaneGeometry(0.05 * H, 0.033 * H), new THREE.MeshLambertMaterial({ map: badgeTex('', '', true) })); bk.rotation.y = PI; bk.position.set(0, -0.016 * H, -0.001); holder.add(bk); }
@@ -1649,7 +1664,7 @@ function buildChase() {
   a.attach('chest', new GB().box(0.09, 0.62, 0.07, { color: 0xf2f2f2 }).box(0.092, 0.2, 0.072, { pos: [0, 0.12, 0], color: 0x19b5ad }).box(0.06, 0.06, 0.004, { pos: [0, -0.1, 0.037], color: 0xffcf1f }).mesh(MATS.vcNoSnow), [0.06, 0.05 * H, -0.12 * H], [0, 0, -0.35]);
   const bow = buildBow(); a.props.bow = bow;
   a.attach('chest', bow, [-0.04, 0.06 * H, -0.13 * H], [0, PI / 2, 0.5]); a.props.bowOnBack = true;
-  addLanyard(a, 'CHASE', 'CASUAL', { back: true });
+  addLanyard(a, 'CHASE', 'CASUAL', { back: true, out: 0.1 }); // over the puffer vest
   return a;
 }
 function chaseBowToHand(on) {
@@ -3126,6 +3141,7 @@ const INPUT = {
   move: { x: 0, y: 0 }, look: { x: 0, y: 0 }, held: {}, pressed: new Set(), released: new Set(), buffer: [], device: IS_TOUCH ? 'touch' : 'kbm',
   keys: new Set(), mouse: new Set(), locked: false, weight: 1, binds: null, rebinding: null, padPrev: [], padIndex: -1, touch: { stick: null, look: null, stickV: { x: 0, y: 0 }, btn: {} },
   lastDodge: -9, anyKey: false, enabled: true, mouseDX: 0, mouseDY: 0,
+  lockFailed: false, lockErrors: 0, lockLostT: -1e9, lockT: -1e9, lastTouchT: -1e9, pausePressT: -1e9, pauseReleaseT: -1e9,
 };
 function keyName(code) {
   if (!code) return '—';
@@ -3141,10 +3157,40 @@ function glyph(action) {
   return keyName(INPUT.binds[action]);
 }
 function actionsFor(code) { const out = []; for (const a in INPUT.binds) if (INPUT.binds[a] === code) out.push(a); if (code === 'ArrowUp') out.push('up'); if (code === 'ArrowDown') out.push('down'); if (code === 'ArrowLeft') out.push('left'); if (code === 'ArrowRight') out.push('right'); return out; }
-function press(a) { if (!INPUT.held[a]) { INPUT.pressed.add(a); INPUT.buffer.push({ a, t: G.realTime }); if (INPUT.buffer.length > 8) INPUT.buffer.shift(); } INPUT.held[a] = true; }
-function release(a) { if (INPUT.held[a]) INPUT.released.add(a); INPUT.held[a] = false; }
+function press(a) { if (!INPUT.held[a]) { if (a === 'pause') INPUT.pausePressT = performance.now(); INPUT.pressed.add(a); INPUT.buffer.push({ a, t: G.realTime }); if (INPUT.buffer.length > 8) INPUT.buffer.shift(); } INPUT.held[a] = true; }
+function release(a) { if (INPUT.held[a]) { INPUT.released.add(a); if (a === 'pause') INPUT.pauseReleaseT = performance.now(); } INPUT.held[a] = false; }
 function consumeBuffered(a, win = 10 * F) { for (let i = INPUT.buffer.length - 1; i >= 0; i--) { const b = INPUT.buffer[i]; if (b.a === a && G.realTime - b.t <= win) { INPUT.buffer.splice(i, 1); return true; } } return false; }
 function wasPressed(a) { return INPUT.pressed.has(a); }
+
+// the active device decides glyphs and whether the touch controls are shown; the last input used wins
+function setDevice(d) {
+  if (INPUT.device === d) return;
+  INPUT.device = d;
+  if (d === 'touch' && document.pointerLockElement) document.exitPointerLock();
+}
+// mouse capture: pointer lock can only be requested from a user gesture (a click or a key), never from Escape
+function wantsLock() { return INPUT.device === 'kbm' && !INPUT.locked && !INPUT.lockSandboxed && SETTINGS.pointerLock !== false && (G.mode === 'play' || G.mode === 'cine') && !UI.menuOpen(); }
+function requestLock(fromClick = false) {
+  const c = $('gl');
+  if (!c.requestPointerLock || !wantsLock()) return false;
+  if (navigator.userActivation && !navigator.userActivation.isActive) return false;
+  INPUT.lockAsked = fromClick; // only a refusal of a click-initiated request says anything about this page's permissions
+  // a frame sandboxed without pointer-lock permission says so outright: go straight to the fallback and stop asking
+  const sandboxed = e => { if (e && /sandbox/i.test(e.message || '')) { INPUT.lockSandboxed = INPUT.lockFailed = true; } };
+  try { const p = c.requestPointerLock(); if (p && p.catch) p.catch(sandboxed); } catch (err) { sandboxed(err); lockError(); return false; }
+  return true;
+}
+// a sandboxed frame without pointer-lock permission refuses every request; after two refused clicks, fall back to free mouse-look
+function lockError() {
+  if (!INPUT.lockAsked) return;
+  INPUT.lockAsked = false;
+  if (performance.now() - INPUT.lockLostT < 1500) return; // Chrome refuses re-locking for a moment after Escape; that's not a permission problem
+  if (++INPUT.lockErrors >= 2) INPUT.lockFailed = true;
+}
+// clicks on menus, buttons and the touch controls belong to them, not to the game
+const uiTarget = t => !!(t && t.closest && t.closest('button, a, input, select, textarea, label, .screen, #menu, #touch'));
+// browsers follow a touch with emulated mouse events; those must not switch the controls back to mouse
+const fromTouch = e => (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) || performance.now() - INPUT.lastTouchT < 800;
 
 function initInput() {
   INPUT.binds = { ...DEFAULT_BINDS, ...(SETTINGS.binds || {}) };
@@ -3152,25 +3198,52 @@ function initInput() {
   window.addEventListener('keydown', e => {
     if (INPUT.rebinding) { e.preventDefault(); finishRebind(e.code); return; }
     if (['Tab', 'Space', 'ArrowUp', 'ArrowDown'].includes(e.code) && !UI.menuOpen()) e.preventDefault();
-    INPUT.device = 'kbm'; INPUT.anyKey = true; initAudio();
+    // keys alone don't hide the touch controls while touch is in use (tablet + keyboard); a real mouse does
+    if (INPUT.device !== 'touch' || performance.now() - INPUT.lastTouchT > 5000) setDevice('kbm');
+    INPUT.anyKey = true; initAudio();
     if (e.repeat) return;
     INPUT.keys.add(e.code);
     for (const a of actionsFor(e.code)) press(a);
     UI.onKey(e);
   });
   window.addEventListener('keyup', e => { INPUT.keys.delete(e.code); for (const a of actionsFor(e.code)) release(a); });
-  canvas.addEventListener('mousedown', e => {
-    if (INPUT.rebinding) { finishRebind('Mouse' + e.button); return; }
-    INPUT.device = 'kbm'; INPUT.anyKey = true; initAudio();
-    if (G.mode === 'play' && !UI.menuOpen() && !INPUT.locked && !IS_TOUCH && SETTINGS.pointerLock !== false) { try { const p = canvas.requestPointerLock && canvas.requestPointerLock(); if (p && p.catch) p.catch(() => { }); } catch (err) { } }
+  // mouse buttons are heard on the whole window: the HUD, subtitles and prompts sit above the canvas
+  window.addEventListener('mousedown', e => {
+    if (fromTouch(e)) return;
+    // preventDefault below also blocks the browser's click-to-focus: inside an iframe (hub, embeds) take focus ourselves or keys never arrive
+    if (!document.hasFocus()) window.focus();
+    if (INPUT.rebinding) { e.preventDefault(); INPUT.eatMenuT = performance.now(); finishRebind('Mouse' + e.button); return; }
+    setDevice('kbm'); INPUT.anyKey = true; initAudio();
+    if (!INPUT.locked && uiTarget(e.target)) return;
+    // the click that captures the mouse doesn't also swing the axe
+    if (!INPUT.locked && !INPUT.lockFailed && G.mode === 'play' && requestLock(true)) { e.preventDefault(); return; }
+    if (!INPUT.locked && (G.mode === 'play' || G.mode === 'cine')) requestLock(true); // cinematics, or quietly retrying in fallback mode
     INPUT.mouse.add(e.button); for (const a of actionsFor('Mouse' + e.button)) press(a);
+    if (INPUT.locked || G.mode === 'play') e.preventDefault();
   });
   window.addEventListener('mouseup', e => { INPUT.mouse.delete(e.button); for (const a of actionsFor('Mouse' + e.button)) release(a); });
-  canvas.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('contextmenu', e => { if (INPUT.locked || !uiTarget(e.target) || performance.now() - (INPUT.eatMenuT || -1e9) < 1000) e.preventDefault(); });
   window.addEventListener('mousemove', e => {
-    if (INPUT.locked || (G.mode === 'play' && !IS_TOUCH && !UI.menuOpen())) { INPUT.mouseDX += e.movementX || 0; INPUT.mouseDY += e.movementY || 0; }
+    if (fromTouch(e)) return;
+    if ((e.movementX || e.movementY) && INPUT.device === 'touch') setDevice('kbm');
+    // the first event after capture can carry the cursor's whole jump to the lock point; ignore it and absurd outliers
+    if (INPUT.locked && (performance.now() - INPUT.lockT < 60 || Math.abs(e.movementX) > 1000 || Math.abs(e.movementY) > 1000)) return;
+    if (INPUT.locked || (INPUT.lockFailed && G.mode === 'play' && INPUT.device === 'kbm' && !UI.menuOpen())) { INPUT.mouseDX += e.movementX || 0; INPUT.mouseDY += e.movementY || 0; }
   });
-  document.addEventListener('pointerlockchange', () => { INPUT.locked = document.pointerLockElement === canvas; });
+  document.addEventListener('pointerlockchange', () => {
+    const was = INPUT.locked;
+    INPUT.locked = document.pointerLockElement === canvas;
+    if (INPUT.locked) { INPUT.lockT = performance.now(); INPUT.lockAsked = false; INPUT.lockErrors = 0; INPUT.lockFailed = false; return; }
+    if (!was) return;
+    // the mouse was released (usually Escape): drop held buttons and pause. Chrome keeps the Escape that frees a captured
+    // mouse to itself, so this is the only sign of it; in a cutscene the pause menu offers Skip Scene. Where the key does
+    // arrive and is being held (Firefox), leave it to hold-to-skip.
+    INPUT.lockLostT = performance.now();
+    for (const b of INPUT.mouse) for (const a of actionsFor('Mouse' + b)) release(a);
+    INPUT.mouse.clear();
+    setTimeout(() => { if ((G.mode === 'play' || (G.mode === 'cine' && !INPUT.held.pause)) && !UI.menuOpen() && !INPUT.locked && INPUT.device === 'kbm') UI.pause(true); }, 120);
+  });
+  document.addEventListener('pointerlockerror', lockError);
   window.addEventListener('blur', () => { for (const a in INPUT.held) release(a); INPUT.keys.clear(); INPUT.mouse.clear(); if (G.mode === 'play' && !UI.menuOpen()) UI.pause(true); });
   window.addEventListener('gamepadconnected', e => { INPUT.padIndex = e.gamepad.index; });
   initTouch();
@@ -3183,12 +3256,16 @@ function finishRebind(code) {
 
 function initTouch() {
   const T = INPUT.touch, root = $('touch');
-  if (!IS_TOUCH) return;
+  if (!HAS_TOUCH) return;
+  // any touch switches to the touch controls; a real mouse or a key switches back
+  window.addEventListener('touchstart', () => { INPUT.lastTouchT = performance.now(); setDevice('touch'); }, { passive: true, capture: true });
+  // emulated mouse events follow touchend, so a long press must not let them through as a real mouse
+  window.addEventListener('touchend', () => { INPUT.lastTouchT = performance.now(); }, { passive: true, capture: true });
   const stick = $('tStick'), knob = stick.querySelector('i');
   const btnEls = [...root.querySelectorAll('.tb')];
   const findBtn = (x, y) => btnEls.find(b => { if (b.classList.contains('hide')) return false; const r = b.getBoundingClientRect(); return x >= r.left - 6 && x <= r.right + 6 && y >= r.top - 6 && y <= r.bottom + 6; });
   const onStart = e => {
-    INPUT.device = 'touch'; initAudio();
+    setDevice('touch'); initAudio();
     for (const t of e.changedTouches) {
       const b = findBtn(t.clientX, t.clientY);
       if (b) { T.btn[t.identifier] = b; b.classList.add('on'); touchBtn(b.dataset.b, true); if (b.dataset.b === 'throw') T.look = T.look || { id: t.identifier, x: t.clientX, y: t.clientY }; continue; }
@@ -3239,7 +3316,7 @@ function pollGamepad() {
   const ax = gp.axes, dz = v => Math.abs(v) < PAD.dead ? 0 : (v - Math.sign(v) * PAD.dead) / (1 - PAD.dead);
   const lx = dz(ax[0] || 0), ly = dz(ax[1] || 0), rx = dz(ax[2] || 0), ry = dz(ax[3] || 0);
   const any = b.some(Boolean) || Math.abs(lx) + Math.abs(ly) + Math.abs(rx) + Math.abs(ry) > 0.3;
-  if (any) { INPUT.device = 'pad'; INPUT.anyKey = true; }
+  if (any) { setDevice('pad'); INPUT.anyKey = true; }
   const edge = (i, a) => { if (b[i] && !prev[i]) press(a); if (!b[i] && prev[i]) release(a); };
   const L1 = b[4];
   if (L1 && b[5] && !prev[5]) press('promoL'); else edge(5, L1 ? '_' : 'light');
@@ -5053,7 +5130,10 @@ function handleActions(mlen, mv, cancelOnly = false) {
     const k = P.comboT < 0.45 ? P.combo % 4 : 0;
     startAttack(['L1', 'L2', 'L3', 'L4'][k]); return;
   }
-  if (wasPressed('heavy') || consumeBuffered('heavy')) {
+  // E is both heavy attack and interact: next to something usable (and out of combat) it means interact
+  const using = currentInteract && wasPressed('interact') && !G.combat;
+  if (using) consumeBuffered('heavy');
+  if (!using && (wasPressed('heavy') || consumeBuffered('heavy'))) {
     if (P.weapon === 'wood') { startAttack('L1'); return; }
     if (P.rageActive) { startAttack('QUOTA'); return; }
     if (fists) { startAttack('FH'); return; }
@@ -6432,7 +6512,7 @@ const pt = (x, y, z) => () => V3(x, y, z);
 
 // ---- control handoffs ----
 function cine(o = {}) {
-  G.mode = 'cine'; DIR.skippable = o.skippable !== false;
+  G.mode = 'cine'; DIR.skippable = o.skippable !== false; DIR.cineT = performance.now();
   if (PLAYER) { PLAYER.control = false; if (PLAYER.state !== 'dead') toState('cine'); PLAYER.vel.set(0, 0, 0); PLAYER.aiming = false; CAM.aiming = false; PLAYER.shieldUp = false; PLAYER.carry = o.carry || false; }
   INPUT.weightTarget = 0; UI.hud(false);
   CHASE.ai = false;
@@ -7068,24 +7148,27 @@ BEATS.pyre_start = async (carrying) => {
   await say('rue', 'Force of habit. Every call I’ve ever been on starts with someone blaming me for JARVIS.');
   // Chase turns the slate toward the pyre. Rue sees it. His face changes.
   await tween(v => slate.rotation.y = lerp(MARKS.slate_post.yaw + 0.3, MARKS.slate_post.yaw + 0.3 - 1.1, v), 0, 1, 1.0);
+  const slateFront = () => CAM.shotFn((t, p, a) => { const s = slateP(), n = slateN(); p.copy(s).addScaledVector(n, 1.05).add(V3(-n.z * 0.3, 0.1, n.x * 0.3)); a.copy(s); }, { omega: 2.2, lens: 50, fStop: 2.4, handheld: 0.25 });
+  slateFront(); CAM.pull(slateP, 0.8);
   RUE.actor.expr = null; RUE.actor.mouthOverride = null;
   nameCard('rue');
   await wait(1.0);
   await say('rue', 'Ah. Ah, it’s lovely. She’d hate it.');
   await wait(0.7);
   await say('rue', 'It’s lovely.');
-  CAM.shotFn((t, p, a) => { p.set(P.x - 3.4, py + 1.65, P.z + 3.2); a.copy(L.headWorld(_v[1])); }, { omega: 2.2, lens: 50, fStop: 2.0, handheld: 0.3 });
+  look(L, slateP, 1); turnTo(L, yawTo(L.pos, slate.position), 3);
+  CAM.shotFn(SHOT.face(L, { yaw: 0.45, dist: 2.4, avoid: [C, LU, ZA] }), { omega: 2.2, lens: 50, fStop: 2.0, handheld: 0.3 });
   CAM.pull(head('luka'), 0.8);
+  await wait(0.5);
   await say('luka', 'Rue.');
-  CAM.shotFn((t, p, a) => { const s = slateP(), n = slateN(); p.copy(s).addScaledVector(n, 1.05).add(V3(-n.z * 0.3, 0.1, n.x * 0.3)); a.copy(s); }, { omega: 2.2, lens: 50, fStop: 2.4, handheld: 0.25 });
-  CAM.pull(slateP, 0.8);
+  slateFront(); CAM.pull(slateP, 0.8);
   await say('rue', 'Head Office wouldn’t let me come down. Said a CEO hasn’t set foot in a store in thirty years, why start now. So I’m here the only way they allow. On a call. Which, as you know, I can’t hang up.', { dur: 9.5 });
   await say('chase', '(whispering to Luka) Why can’t he hang up?');
   await say('luka', 'Nobody knows.');
   await say('rue', 'I can hear you, Chase.');
   // Chase props the slate on the corner of the display table, facing everyone
   walk(C, V3(P.x - 1.4, py, P.z + 1.4), { speed: 1.1 }); await wait(1.2);
-  worldState({ slate: 'table' });
+  worldState({ slate: 'table' }); turnTo(L, PI / 2, 2);
   await walk(C, 'pyre_chase', { speed: 1.1 });
   await eulogy();
 };
@@ -7104,8 +7187,9 @@ async function eulogy() {
   CAM.pull(head('chase'), 2);
   await say('rue', 'Faye ran Store Zero-Zero-One for longer than any of you have been alive.', { dur: 4.2 });
   // drift to Chase. The wind has flipped his lanyard badge: for ~2 s the player can read the back, in Faye's handwriting.
-  const badgeP = () => C.props.badge.getWorldPosition(V3());
-  CAM.shotFn((t, p, a) => { const b = badgeP(); localToWorld(C, [0.32, 1.42, 0.95], p); a.copy(b).lerp(C.headWorld(_v[1]), 0.3); }, { omega: 1.5, lens: 50, fStop: 2.2, handheld: 0.25 });
+  const card = () => { const b = C.props.badge; return b.children[b.children.length - 1]; };
+  const badgeP = () => card().getWorldPosition(V3());
+  CAM.shotFn((t, p, a) => { const b = badgeP(), n = fwdFromYaw(C.yaw, _v[2]); p.copy(b).addScaledVector(n, 0.8).add(V3(-n.z * 0.12, 0.06, n.x * 0.12)); a.copy(b).lerp(C.headWorld(_v[1]), smoothstep(2.6, 5, t) * 0.8); }, { omega: 1.5, lens: 50, fStop: 2.8, handheld: 0.2 });
   const flip = tween(v => C.props.badge.rotation.y = v, 0, PI, 0.5);
   await say('rue', 'Well — longer than Chase has been employed, which in retail is the same thing.', { dur: 4.4 });
   C.expr = 2; later(1.2, () => { C.expr = null; });
@@ -7601,7 +7685,7 @@ BEATS.kiosk = async () => {
 async function openKiosk(first) {
   const prevMode = G.mode; G.mode = 'menu';
   const res = await UI.openKiosk(first);
-  G.mode = prevMode === 'menu' ? 'play' : prevMode;
+  G.mode = prevMode === 'menu' ? 'play' : prevMode; requestLock(); // the Done click still counts as the gesture
   if (res === 'brothers') await brothersBit();
 }
 async function brothersBit() {
@@ -7851,7 +7935,8 @@ BEATS.queue = async () => {
   CAM.shotFn((t, p, a) => { const k = smoothstep(0, 10, t); p.set(lerp(37, 40, k), lerp(9.0, 13.5, k), lerp(149.5, 151, k)); a.set(lerp(43, 50, k), lerp(9.2, 9.6, k), lerp(144, 146, k)); }, { omega: 1.4, lens: 24, fStop: 4, handheld: 0.2 });
   CAM.focusOn(() => V3(44, 9.5, 144));
   await wait(5.5);
-  CAM.shotFn((t, p, a) => { const m = L.pos.clone().lerp(C.pos, 0.5); p.copy(m).add(V3(-2.4, 1.6, 2.0)); a.copy(m).add(V3(0.6, 1.4, 0)); }, { omega: 1.8, lens: 35, fStop: 2.8, handheld: 0.25 });
+  const qside = V3(37.5, 0, 148.5);
+  CAM.shotFn(SHOT.two(L, C, { from: qside, swing: 0.25, fill: 1.0 }), { omega: 1.8, lens: 35, fStop: 2.8, handheld: 0.25 });
   CAM.pull(head('chase'), 0.6);
   await say('chase', '(whisper) They’re… queuing.');
   CAM.pull(head('luka'), 0.5);
@@ -7859,7 +7944,7 @@ BEATS.queue = async () => {
   // Chase has already taken a ticket. The machine dings, bright and loud.
   place(C, T.pos.clone().add(V3(-0.6, 0, -0.6)).setY(groundHeight(T.pos.x - 0.6, T.pos.z - 0.6)), yawTo(T.pos.clone().add(V3(-0.6, 0, -0.6)), T.pos));
   sfx('ding', T.pos, 1.2);
-  CAM.shotFn((t, p, a) => { p.copy(C.pos).add(V3(-1.6, 1.65, -1.5)); a.copy(C.headWorld(_v[1])); }, { omega: 4, lens: 50, fStop: 2.4, handheld: 0.35 });
+  CAM.shotFn(SHOT.face(C, { yaw: 0.7, dist: 2.1, avoid: [L] }), { omega: 4, lens: 50, fStop: 2.4, handheld: 0.35 });
   CAM.pull(head('chase'), 0.4);
   await wait(1.0);
   act(C, 'tap');
@@ -7869,9 +7954,13 @@ BEATS.queue = async () => {
   for (const e of QUEUE) { const y0 = e.yaw, y1 = yawTo(e.pos, L.pos); tween(v => e.yaw = y0 + angleTo(y0, y1) * v, 0, 1, 0.35, EASE.outCubic); }
   sfx('crack', V3(43, 9, 144), 0.6);
   await wait(1.3);
-  CAM.shotFn((t, p, a) => { const m = L.pos.clone().lerp(C.pos, 0.5); p.copy(m).add(V3(-2.4, 1.6, 2.0)); a.copy(m).add(V3(0.6, 1.4, 0)); }, { omega: 3, lens: 35, fStop: 2.8, handheld: 0.35 });
-  CAM.pull(head('luka'), 0.4);
+  CAM.shotFn(SHOT.face(L, { yaw: 0.6, dist: 2.3, toward: C, k: 0.1 }), { omega: 5, lens: 50, fStop: 2.4, handheld: 0.35 });
+  CAM.pull(head('luka'), 0.3);
+  await wait(0.5);
   await say('luka', 'Casual.');
+  CAM.shotFn(SHOT.face(C, { yaw: 0.6, dist: 2.1, toward: L, k: 0.1 }), { omega: 5, lens: 50, fStop: 2.4, handheld: 0.35 });
+  CAM.pull(head('chase'), 0.3);
+  await wait(0.4);
   await say('chase', 'I know.');
   G.queueTick = false;
   // 8.2 — the fight: groups of 2–3 peel off; two 1-Star Reviewers on the toll-booth roof; a Hold-Music Churned mid-fight; a Brute closes it out
@@ -7943,13 +8032,19 @@ BEATS.hamarr = async () => {
   await wait(1.0);
   CAM.focusOn(head('hamarr'));
   await say('hamarr', 'TOLL.', { caps: true });
-  CAM.pull(head('chase'), 0.4);
+  const hero = () => CAM.shotFn((t, p, a) => { p.set(73 - t * 0.05, DECK.y + 0.55, 147.5); a.copy(b.headPos(_v[1])); }, { omega: 2.4, lens: 18, fStop: 5.6, handheld: 0.4 });
+  // quick whips between the three of them: the lines are short, so the operator snaps rather than drifts
+  CAM.shotFn(SHOT.face(C, { yaw: 0.6, dist: 2.2, toward: b.actor, k: 0.15, avoid: [L] }), { omega: 6.5, lens: 35, fStop: 2.8, handheld: 0.35 });
+  CAM.pull(head('chase'), 0.3);
+  await wait(0.35);
   await say('chase', 'Did he just say toll?');
-  CAM.pull(head('hamarr'), 0.4);
+  hero(); CAM.pull(head('hamarr'), 0.4);
   await say('hamarr', 'TOLL. OR. REVIEW.', { caps: true });
-  CAM.pull(head('luka'), 0.4);
+  CAM.shotFn(SHOT.face(L, { yaw: 0.55, dist: 2.3, dy: -0.35, toward: b.actor, k: 0.2, avoid: [C] }), { omega: 6.5, lens: 35, fStop: 2.8, handheld: 0.35 });
+  CAM.pull(head('luka'), 0.3);
+  await wait(0.4);
   await say('luka', 'Neither.');
-  CAM.pull(head('hamarr'), 0.4);
+  hero(); CAM.pull(head('hamarr'), 0.4);
   b.actor.anim.play('hSlam', { speed: 0.6 });
   await say('hamarr', '(raising the totem) WORST. SERVICE. EVER.', { caps: true });
   UI.bossBar(true, 'Dodgy Hamarr', 'Troll of the Comment Section');
@@ -8036,8 +8131,10 @@ async function runGood35(b) {
   await say('luka', '(getting up) …Good.', { slow: 1.2 });
   trophy('Good.');
   await wait(0.6);
+  CAM.shotFn(SHOT.face(C, { yaw: 0.6, dist: 2.3, toward: L, k: 0.15, avoid: [L] }), { omega: 2.6, lens: 50, fStop: 2.4, handheld: 0.3 });
   CAM.pull(head('chase'), 0.6);
   await say('chase', 'Did you just say “good”?');
+  CAM.shotFn(SHOT.face(L, { yaw: 0.8, dist: 2.4, toward: C, k: 0.15, avoid: [C] }), { omega: 2.6, lens: 50, fStop: 2.4, handheld: 0.3 });
   CAM.pull(head('luka'), 0.4);
   await say('luka', 'Shoot.');
   look(L, null);
@@ -8404,6 +8501,10 @@ function buildHUD() {
 function updateHUD(dt) {
   UI.hudA = damp(UI.hudA, UI.hudOn ? 1 : 0, UI.hudOn ? 1 / 0.8 * 3 : 1 / 0.5 * 3, dt);
   document.documentElement.style.setProperty('--hud-a', UI.hudA.toFixed(3));
+  // the touch controls only exist while touch is the device in use
+  const touchOn = INPUT.device === 'touch' && G.mode === 'play' && !UI.menuOpen();
+  $('touch').classList.toggle('on', touchOn); document.body.classList.toggle('touchUI', touchOn);
+  $('lockHint').classList.toggle('on', G.mode === 'play' && INPUT.device === 'kbm' && !INPUT.locked && !INPUT.lockFailed && !UI.menuOpen() && SETTINGS.pointerLock !== false);
   const P = PLAYER; if (!P) return;
   const k = clamp01(P.hp / P.maxHp);
   $('hpFill').style.transform = `scaleX(${k})`; $('hpLag').style.transform = `scaleX(${clamp01(P.hpLag / P.maxHp)})`;
@@ -8420,8 +8521,7 @@ function updateHUD(dt) {
   $('reticle').classList.toggle('on', P.aiming && UI.hudA > 0.5);
   if (BOSS && BOSS.alive) { $('bossFill').style.transform = `scaleX(${clamp01(BOSS.hp / BOSS.maxHp)})`; BOSS.hpLag = BOSS.hpLag == null ? BOSS.hp : Math.max(BOSS.hp, BOSS.hpLag - dt * 120); $('bossLag').style.transform = `scaleX(${clamp01(BOSS.hpLag / BOSS.maxHp)})`; $('bossStun').style.transform = `scaleX(${clamp01(BOSS.stun / BOSS.stunCap)})`; }
   // touch: rage button and contextual button
-  if (IS_TOUCH) {
-    $('touch').classList.toggle('on', G.mode === 'play' && !UI.menuOpen());
+  if (touchOn) {
     document.querySelector('[data-b="rage"]').classList.toggle('hide', !(P.rage >= 100 && !P.rageActive));
     const ctx = $('tCtx'); const show = !!(P.finisherTarget || currentInteract); ctx.classList.toggle('hide', !show); if (show) ctx.textContent = P.finisherTarget ? 'Close the Deal' : 'Interact';
     document.querySelector('[data-b="throw"]').textContent = P.axeState !== 'hand' ? 'Callback' : 'Throw';
@@ -8518,13 +8618,13 @@ UI.showTitle = (on) => {
     setTimeout(() => { t.style.opacity = 0; }, 900); setTimeout(() => { t.style.display = 'none'; }, 2200);
   }
 };
-function startGame() { if (G.mode !== 'title') return; beginShift(); }
+function startGame() { if (G.mode !== 'title') return; beginShift(); requestLock(); }
 function continueGame(cp) {
   if (G.mode !== 'title') return;
   loadProgress(); G.title = false; UI.showTitle(false); G.stats.startT = G.realTime;
   G.checkpoint = cp; G.mode = 'cine';
   R.post.fade = 0; $('fade').style.transition = 'none'; $('fade').style.opacity = 1;
-  runStory(cp);
+  runStory(cp); requestLock();
   setTimeout(() => { $('fade').style.transition = 'opacity 1.6s'; $('fade').style.opacity = 0; }, 500);
 }
 
@@ -8538,12 +8638,13 @@ UI.pause = (force) => {
   UI.prevMode = G.mode; G.mode = 'pause'; renderPause(); openScreen('pause');
   if (AUDIO.ok) AUDIO.ctx.suspend();
 };
-UI.resume = () => { closeScreen('pause'); closeScreen('settings'); G.mode = UI.prevMode || 'play'; if (AUDIO.ok) AUDIO.ctx.resume(); };
+UI.resume = () => { closeScreen('pause'); closeScreen('settings'); G.mode = UI.prevMode || 'play'; if (AUDIO.ok) AUDIO.ctx.resume(); requestLock(); };
 UI.togglePause = () => { if (G.mode === 'pause') UI.resume(); else UI.pause(); };
 function renderPause() {
   const p = $('pausePanel');
   p.innerHTML = `<h2>On Break</h2><p class="lede">${esc(CHECKPOINT_LABELS[G.checkpoint] || '')} · ${esc(diff().label)}</p><div class="stack" id="pauseItems"></div>`;
   const items = [['Resume', () => UI.resume()], ['Settings', () => UI.openSettings()], ['Controls', () => UI.openSettings('controls')], ['Training Modules', () => UI.openCodex()], ['Restart Checkpoint', () => { UI.resume(); callBack(); }], ['Quit to Title', () => quitToTitle()]];
+  if (UI.prevMode === 'cine' && DIR.skippable) items.splice(1, 0, ['Skip Scene', () => { UI.resume(); DIR.skipping = true; hideSub(); }]);
   const st = $('pauseItems');
   items.forEach(([l, f]) => { const b = el('button', 'opt', l); b.onclick = () => { sfx('ui'); f(); }; st.appendChild(b); });
 }
@@ -8555,7 +8656,7 @@ function quitToTitle() {
 }
 UI.showDeath = () => {
   openScreen('death'); $('btnCallBack').focus();
-  $('btnCallBack').onclick = () => { sfx('ui'); closeScreen('death'); callBack(); };
+  $('btnCallBack').onclick = () => { sfx('ui'); closeScreen('death'); callBack(); requestLock(); };
   $('btnChangePlan').onclick = () => { sfx('ui'); UI.openSettings('play', true); };
 };
 // ---------- settings (§13) ----------
@@ -8599,7 +8700,7 @@ UI.renderSettings = () => {
     const pad = el('p', 'small', 'Gamepad: RB light · RT heavy · LT aim · Y callback · LB shield · A dodge · X Chase · R3 Close the Deal · L3+R3 Rage · D-pad ↓ quick turn. Touch: left stick moves, drag right side to look.'); br.appendChild(pad);
     const rb = el('button', 'btn', 'Reset bindings'); rb.onclick = () => { SETTINGS.binds = {}; INPUT.binds = { ...DEFAULT_BINDS }; saveSettings(); UI.renderSettings(); }; br.appendChild(rb);
   }
-  $('setDone').onclick = () => { sfx('uiBack'); closeScreen('settings'); if (UI.setFromDeath) { closeScreen('death'); callBack(); } };
+  $('setDone').onclick = () => { sfx('uiBack'); closeScreen('settings'); if (UI.setFromDeath) { closeScreen('death'); callBack(); requestLock(); } };
 };
 UI.openCodex = () => {
   const p = $('setPanel');
@@ -8706,13 +8807,15 @@ UI.onKey = (e) => {
     else if (e.code === 'Enter' || e.code === 'Space') { const it = UI.titleItems[UI.titleSel]; if (it) { sfx('ui'); it[1](); } }
     return;
   }
-  if (e.code === 'Escape' && UI.menuStack.includes('settings')) { closeScreen('settings'); return; }
-  if (e.code === 'Escape' && UI.menuStack.includes('kiosk')) { closeScreen('kiosk'); UI.kioskRes && UI.kioskRes('done'); return; }
+  // Escape backs out of the top menu only: it must not also reach the pause toggle in tick()
+  if (e.code === 'Escape' && UI.menuStack.includes('settings')) { INPUT.pressed.delete('pause'); closeScreen('settings'); return; }
+  if (e.code === 'Escape' && UI.menuStack.includes('kiosk')) { INPUT.pressed.delete('pause'); closeScreen('kiosk'); UI.kioskRes && UI.kioskRes('done'); return; }
 };
 function updateSkipHint(realDt) {
   const sh = $('skipHint');
   const can = G.mode === 'cine' && DIR.skippable && !DIR.skipping;
-  if (can && INPUT.held.pause) { DIR.holdSkip += realDt; sh.classList.add('on'); sh.querySelector('.ring').style.setProperty('--p', Math.min(100, DIR.holdSkip * 100) + '%'); if (DIR.holdSkip >= 1) { DIR.skipping = true; DIR.holdSkip = 0; sh.classList.remove('on'); hideSub(); } }
+  // held for one second of wall-clock time (not frame time), counted from the press or the start of the cutscene
+  if (can && INPUT.held.pause) { DIR.holdSkip = (performance.now() - Math.max(INPUT.pausePressT, DIR.cineT || 0)) / 1000; sh.classList.add('on'); sh.querySelector('.ring').style.setProperty('--p', Math.min(100, DIR.holdSkip * 100) + '%'); if (DIR.holdSkip >= 1) { DIR.skipping = true; DIR.holdSkip = 0; sh.classList.remove('on'); hideSub(); } }
   else { DIR.holdSkip = 0; if (!can || !INPUT.held.pause) sh.classList.remove('on'); }
 }
 
@@ -8779,8 +8882,12 @@ function tick(realDt) {
   updateInput(realDt);
   autopilot(realDt);
   // pause (tap) vs skip (hold) during cinematics
-  if (wasPressed('pause')) { if (G.mode === 'cine' && DIR.skippable) INPUT.pauseDownT = G.realTime; else if (G.mode !== 'title' && !UI.menuStack.includes('settings') && !UI.menuStack.includes('kiosk')) UI.togglePause(); }
-  if (INPUT.released.has('pause') && INPUT.pauseDownT && G.realTime - INPUT.pauseDownT < 0.3 && G.mode === 'cine') { UI.pause(); }
+  // (the Escape that released the mouse has already paused the game; it must not unpause it again — compared by event
+  // time, since at a low frame rate the tick that reads the press can come long after both events)
+  const lockEsc = G.mode === 'pause' && Math.abs(INPUT.pausePressT - INPUT.lockLostT) < 400;
+  if (wasPressed('pause') && !lockEsc) { if (G.mode === 'cine' && DIR.skippable) INPUT.pauseDownT = G.realTime; else if (G.mode !== 'title' && !UI.menuStack.includes('settings') && !UI.menuStack.includes('kiosk')) UI.togglePause(); }
+  // tap vs hold in a cutscene, by wall-clock event times (frame time is capped, so slow machines would misread a hold)
+  if (INPUT.released.has('pause') && INPUT.pauseDownT && INPUT.pauseReleaseT - INPUT.pausePressT < 300 && G.mode === 'cine') { UI.pause(); }
   if (INPUT.released.has('pause')) INPUT.pauseDownT = 0;
   if (G.mode === 'title' && INPUT.anyKey) { initAudio(); $('soundHint').style.display = 'none'; }
   const paused = G.mode === 'pause' || G.mode === 'menu';
@@ -8846,7 +8953,7 @@ function updateDebug(dt) {
 
 // ---------- autopilot for automated play-throughs (?autoplay=1) ----------
 const ROUTE = [[-22, -168], [-17, -142], [-9, -116], [-1, -103], [3, -85], [6, -62], [-1, -44], [-8, -32], [-8, -21], [-6, 0], [0, 12], [2, 22], [11, 30], [22, 44], [33, 62], [38, 80], [42, 98], [45, 116], [47, 136], [48, 146], [60, 146], [72, 146]];
-const AUTO = { t: 0, swing: 0 };
+const AUTO = { t: 0, swing: 0, stuckT: 0, dodgeT: 0, last: null };
 function autopilot(dt) {
   if (!G.flags.autoplay || !PLAYER) return;
   AUTO.t += dt;
@@ -8880,6 +8987,11 @@ function autopilot(dt) {
   if (!target) return;
   camBasis();
   const d = _v[0].copy(target).sub(P.pos).setY(0); if (d.length() < 0.5) return; d.normalize();
+  // snagged on a prop: sidestep for a moment, then try the straight line again
+  if (!AUTO.last) AUTO.last = P.pos.clone();
+  AUTO.stuckT = dist2D(P.pos, AUTO.last) < 0.04 ? AUTO.stuckT + dt : 0; AUTO.last.copy(P.pos);
+  if (AUTO.stuckT > 1.2) { AUTO.dodgeT = 1.0; AUTO.dodgeSide = -(AUTO.dodgeSide || 1); AUTO.stuckT = 0; }
+  if (AUTO.dodgeT > 0) { AUTO.dodgeT -= dt; d.set(-d.z * AUTO.dodgeSide, 0, d.x * AUTO.dodgeSide).addScaledVector(d, 0.3).normalize(); }
   INPUT.move.y = d.dot(_pv.f); INPUT.move.x = d.dot(_pv.r);
 }
 
@@ -8888,6 +9000,8 @@ window.__GOW = {
   skip: () => { DIR.skipping = true; }, killAll: () => ENEMIES.forEach(e => e.alive && e.kind !== 'hamarr' && e.hurt({ dmg: 9999 })),
   tp: (x, z) => { PLAYER.pos.set(x, groundHeight(x, z), z); }, god: (v = true) => { G.flags.god = v; },
 };
+// scenes abandoned by a checkpoint reload reject with Abort; that's expected, not an error
+window.addEventListener('unhandledrejection', e => { if (e.reason && e.reason.isAbort) e.preventDefault(); });
 boot();
 
 </script>

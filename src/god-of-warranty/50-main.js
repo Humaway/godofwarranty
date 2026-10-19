@@ -60,8 +60,12 @@ function tick(realDt) {
   updateInput(realDt);
   autopilot(realDt);
   // pause (tap) vs skip (hold) during cinematics
-  if (wasPressed('pause')) { if (G.mode === 'cine' && DIR.skippable) INPUT.pauseDownT = G.realTime; else if (G.mode !== 'title' && !UI.menuStack.includes('settings') && !UI.menuStack.includes('kiosk')) UI.togglePause(); }
-  if (INPUT.released.has('pause') && INPUT.pauseDownT && G.realTime - INPUT.pauseDownT < 0.3 && G.mode === 'cine') { UI.pause(); }
+  // (the Escape that released the mouse has already paused the game; it must not unpause it again — compared by event
+  // time, since at a low frame rate the tick that reads the press can come long after both events)
+  const lockEsc = G.mode === 'pause' && Math.abs(INPUT.pausePressT - INPUT.lockLostT) < 400;
+  if (wasPressed('pause') && !lockEsc) { if (G.mode === 'cine' && DIR.skippable) INPUT.pauseDownT = G.realTime; else if (G.mode !== 'title' && !UI.menuStack.includes('settings') && !UI.menuStack.includes('kiosk')) UI.togglePause(); }
+  // tap vs hold in a cutscene, by wall-clock event times (frame time is capped, so slow machines would misread a hold)
+  if (INPUT.released.has('pause') && INPUT.pauseDownT && INPUT.pauseReleaseT - INPUT.pausePressT < 300 && G.mode === 'cine') { UI.pause(); }
   if (INPUT.released.has('pause')) INPUT.pauseDownT = 0;
   if (G.mode === 'title' && INPUT.anyKey) { initAudio(); $('soundHint').style.display = 'none'; }
   const paused = G.mode === 'pause' || G.mode === 'menu';
@@ -127,7 +131,7 @@ function updateDebug(dt) {
 
 // ---------- autopilot for automated play-throughs (?autoplay=1) ----------
 const ROUTE = [[-22, -168], [-17, -142], [-9, -116], [-1, -103], [3, -85], [6, -62], [-1, -44], [-8, -32], [-8, -21], [-6, 0], [0, 12], [2, 22], [11, 30], [22, 44], [33, 62], [38, 80], [42, 98], [45, 116], [47, 136], [48, 146], [60, 146], [72, 146]];
-const AUTO = { t: 0, swing: 0 };
+const AUTO = { t: 0, swing: 0, stuckT: 0, dodgeT: 0, last: null };
 function autopilot(dt) {
   if (!G.flags.autoplay || !PLAYER) return;
   AUTO.t += dt;
@@ -161,6 +165,11 @@ function autopilot(dt) {
   if (!target) return;
   camBasis();
   const d = _v[0].copy(target).sub(P.pos).setY(0); if (d.length() < 0.5) return; d.normalize();
+  // snagged on a prop: sidestep for a moment, then try the straight line again
+  if (!AUTO.last) AUTO.last = P.pos.clone();
+  AUTO.stuckT = dist2D(P.pos, AUTO.last) < 0.04 ? AUTO.stuckT + dt : 0; AUTO.last.copy(P.pos);
+  if (AUTO.stuckT > 1.2) { AUTO.dodgeT = 1.0; AUTO.dodgeSide = -(AUTO.dodgeSide || 1); AUTO.stuckT = 0; }
+  if (AUTO.dodgeT > 0) { AUTO.dodgeT -= dt; d.set(-d.z * AUTO.dodgeSide, 0, d.x * AUTO.dodgeSide).addScaledVector(d, 0.3).normalize(); }
   INPUT.move.y = d.dot(_pv.f); INPUT.move.x = d.dot(_pv.r);
 }
 
@@ -169,4 +178,6 @@ window.__GOW = {
   skip: () => { DIR.skipping = true; }, killAll: () => ENEMIES.forEach(e => e.alive && e.kind !== 'hamarr' && e.hurt({ dmg: 9999 })),
   tp: (x, z) => { PLAYER.pos.set(x, groundHeight(x, z), z); }, god: (v = true) => { G.flags.god = v; },
 };
+// scenes abandoned by a checkpoint reload reject with Abort; that's expected, not an error
+window.addEventListener('unhandledrejection', e => { if (e.reason && e.reason.isAbort) e.preventDefault(); });
 boot();

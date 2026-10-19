@@ -9,6 +9,7 @@ const INPUT = {
   move: { x: 0, y: 0 }, look: { x: 0, y: 0 }, held: {}, pressed: new Set(), released: new Set(), buffer: [], device: IS_TOUCH ? 'touch' : 'kbm',
   keys: new Set(), mouse: new Set(), locked: false, weight: 1, binds: null, rebinding: null, padPrev: [], padIndex: -1, touch: { stick: null, look: null, stickV: { x: 0, y: 0 }, btn: {} },
   lastDodge: -9, anyKey: false, enabled: true, mouseDX: 0, mouseDY: 0,
+  lockFailed: false, lockErrors: 0, lockLostT: -1e9, lockT: -1e9, lastTouchT: -1e9, pausePressT: -1e9, pauseReleaseT: -1e9,
 };
 function keyName(code) {
   if (!code) return '—';
@@ -24,10 +25,40 @@ function glyph(action) {
   return keyName(INPUT.binds[action]);
 }
 function actionsFor(code) { const out = []; for (const a in INPUT.binds) if (INPUT.binds[a] === code) out.push(a); if (code === 'ArrowUp') out.push('up'); if (code === 'ArrowDown') out.push('down'); if (code === 'ArrowLeft') out.push('left'); if (code === 'ArrowRight') out.push('right'); return out; }
-function press(a) { if (!INPUT.held[a]) { INPUT.pressed.add(a); INPUT.buffer.push({ a, t: G.realTime }); if (INPUT.buffer.length > 8) INPUT.buffer.shift(); } INPUT.held[a] = true; }
-function release(a) { if (INPUT.held[a]) INPUT.released.add(a); INPUT.held[a] = false; }
+function press(a) { if (!INPUT.held[a]) { if (a === 'pause') INPUT.pausePressT = performance.now(); INPUT.pressed.add(a); INPUT.buffer.push({ a, t: G.realTime }); if (INPUT.buffer.length > 8) INPUT.buffer.shift(); } INPUT.held[a] = true; }
+function release(a) { if (INPUT.held[a]) { INPUT.released.add(a); if (a === 'pause') INPUT.pauseReleaseT = performance.now(); } INPUT.held[a] = false; }
 function consumeBuffered(a, win = 10 * F) { for (let i = INPUT.buffer.length - 1; i >= 0; i--) { const b = INPUT.buffer[i]; if (b.a === a && G.realTime - b.t <= win) { INPUT.buffer.splice(i, 1); return true; } } return false; }
 function wasPressed(a) { return INPUT.pressed.has(a); }
+
+// the active device decides glyphs and whether the touch controls are shown; the last input used wins
+function setDevice(d) {
+  if (INPUT.device === d) return;
+  INPUT.device = d;
+  if (d === 'touch' && document.pointerLockElement) document.exitPointerLock();
+}
+// mouse capture: pointer lock can only be requested from a user gesture (a click or a key), never from Escape
+function wantsLock() { return INPUT.device === 'kbm' && !INPUT.locked && !INPUT.lockSandboxed && SETTINGS.pointerLock !== false && (G.mode === 'play' || G.mode === 'cine') && !UI.menuOpen(); }
+function requestLock(fromClick = false) {
+  const c = $('gl');
+  if (!c.requestPointerLock || !wantsLock()) return false;
+  if (navigator.userActivation && !navigator.userActivation.isActive) return false;
+  INPUT.lockAsked = fromClick; // only a refusal of a click-initiated request says anything about this page's permissions
+  // a frame sandboxed without pointer-lock permission says so outright: go straight to the fallback and stop asking
+  const sandboxed = e => { if (e && /sandbox/i.test(e.message || '')) { INPUT.lockSandboxed = INPUT.lockFailed = true; } };
+  try { const p = c.requestPointerLock(); if (p && p.catch) p.catch(sandboxed); } catch (err) { sandboxed(err); lockError(); return false; }
+  return true;
+}
+// a sandboxed frame without pointer-lock permission refuses every request; after two refused clicks, fall back to free mouse-look
+function lockError() {
+  if (!INPUT.lockAsked) return;
+  INPUT.lockAsked = false;
+  if (performance.now() - INPUT.lockLostT < 1500) return; // Chrome refuses re-locking for a moment after Escape; that's not a permission problem
+  if (++INPUT.lockErrors >= 2) INPUT.lockFailed = true;
+}
+// clicks on menus, buttons and the touch controls belong to them, not to the game
+const uiTarget = t => !!(t && t.closest && t.closest('button, a, input, select, textarea, label, .screen, #menu, #touch'));
+// browsers follow a touch with emulated mouse events; those must not switch the controls back to mouse
+const fromTouch = e => (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) || performance.now() - INPUT.lastTouchT < 800;
 
 function initInput() {
   INPUT.binds = { ...DEFAULT_BINDS, ...(SETTINGS.binds || {}) };
@@ -35,25 +66,52 @@ function initInput() {
   window.addEventListener('keydown', e => {
     if (INPUT.rebinding) { e.preventDefault(); finishRebind(e.code); return; }
     if (['Tab', 'Space', 'ArrowUp', 'ArrowDown'].includes(e.code) && !UI.menuOpen()) e.preventDefault();
-    INPUT.device = 'kbm'; INPUT.anyKey = true; initAudio();
+    // keys alone don't hide the touch controls while touch is in use (tablet + keyboard); a real mouse does
+    if (INPUT.device !== 'touch' || performance.now() - INPUT.lastTouchT > 5000) setDevice('kbm');
+    INPUT.anyKey = true; initAudio();
     if (e.repeat) return;
     INPUT.keys.add(e.code);
     for (const a of actionsFor(e.code)) press(a);
     UI.onKey(e);
   });
   window.addEventListener('keyup', e => { INPUT.keys.delete(e.code); for (const a of actionsFor(e.code)) release(a); });
-  canvas.addEventListener('mousedown', e => {
-    if (INPUT.rebinding) { finishRebind('Mouse' + e.button); return; }
-    INPUT.device = 'kbm'; INPUT.anyKey = true; initAudio();
-    if (G.mode === 'play' && !UI.menuOpen() && !INPUT.locked && !IS_TOUCH && SETTINGS.pointerLock !== false) { try { const p = canvas.requestPointerLock && canvas.requestPointerLock(); if (p && p.catch) p.catch(() => { }); } catch (err) { } }
+  // mouse buttons are heard on the whole window: the HUD, subtitles and prompts sit above the canvas
+  window.addEventListener('mousedown', e => {
+    if (fromTouch(e)) return;
+    // preventDefault below also blocks the browser's click-to-focus: inside an iframe (hub, embeds) take focus ourselves or keys never arrive
+    if (!document.hasFocus()) window.focus();
+    if (INPUT.rebinding) { e.preventDefault(); INPUT.eatMenuT = performance.now(); finishRebind('Mouse' + e.button); return; }
+    setDevice('kbm'); INPUT.anyKey = true; initAudio();
+    if (!INPUT.locked && uiTarget(e.target)) return;
+    // the click that captures the mouse doesn't also swing the axe
+    if (!INPUT.locked && !INPUT.lockFailed && G.mode === 'play' && requestLock(true)) { e.preventDefault(); return; }
+    if (!INPUT.locked && (G.mode === 'play' || G.mode === 'cine')) requestLock(true); // cinematics, or quietly retrying in fallback mode
     INPUT.mouse.add(e.button); for (const a of actionsFor('Mouse' + e.button)) press(a);
+    if (INPUT.locked || G.mode === 'play') e.preventDefault();
   });
   window.addEventListener('mouseup', e => { INPUT.mouse.delete(e.button); for (const a of actionsFor('Mouse' + e.button)) release(a); });
-  canvas.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('contextmenu', e => { if (INPUT.locked || !uiTarget(e.target) || performance.now() - (INPUT.eatMenuT || -1e9) < 1000) e.preventDefault(); });
   window.addEventListener('mousemove', e => {
-    if (INPUT.locked || (G.mode === 'play' && !IS_TOUCH && !UI.menuOpen())) { INPUT.mouseDX += e.movementX || 0; INPUT.mouseDY += e.movementY || 0; }
+    if (fromTouch(e)) return;
+    if ((e.movementX || e.movementY) && INPUT.device === 'touch') setDevice('kbm');
+    // the first event after capture can carry the cursor's whole jump to the lock point; ignore it and absurd outliers
+    if (INPUT.locked && (performance.now() - INPUT.lockT < 60 || Math.abs(e.movementX) > 1000 || Math.abs(e.movementY) > 1000)) return;
+    if (INPUT.locked || (INPUT.lockFailed && G.mode === 'play' && INPUT.device === 'kbm' && !UI.menuOpen())) { INPUT.mouseDX += e.movementX || 0; INPUT.mouseDY += e.movementY || 0; }
   });
-  document.addEventListener('pointerlockchange', () => { INPUT.locked = document.pointerLockElement === canvas; });
+  document.addEventListener('pointerlockchange', () => {
+    const was = INPUT.locked;
+    INPUT.locked = document.pointerLockElement === canvas;
+    if (INPUT.locked) { INPUT.lockT = performance.now(); INPUT.lockAsked = false; INPUT.lockErrors = 0; INPUT.lockFailed = false; return; }
+    if (!was) return;
+    // the mouse was released (usually Escape): drop held buttons and pause. Chrome keeps the Escape that frees a captured
+    // mouse to itself, so this is the only sign of it; in a cutscene the pause menu offers Skip Scene. Where the key does
+    // arrive and is being held (Firefox), leave it to hold-to-skip.
+    INPUT.lockLostT = performance.now();
+    for (const b of INPUT.mouse) for (const a of actionsFor('Mouse' + b)) release(a);
+    INPUT.mouse.clear();
+    setTimeout(() => { if ((G.mode === 'play' || (G.mode === 'cine' && !INPUT.held.pause)) && !UI.menuOpen() && !INPUT.locked && INPUT.device === 'kbm') UI.pause(true); }, 120);
+  });
+  document.addEventListener('pointerlockerror', lockError);
   window.addEventListener('blur', () => { for (const a in INPUT.held) release(a); INPUT.keys.clear(); INPUT.mouse.clear(); if (G.mode === 'play' && !UI.menuOpen()) UI.pause(true); });
   window.addEventListener('gamepadconnected', e => { INPUT.padIndex = e.gamepad.index; });
   initTouch();
@@ -66,12 +124,16 @@ function finishRebind(code) {
 
 function initTouch() {
   const T = INPUT.touch, root = $('touch');
-  if (!IS_TOUCH) return;
+  if (!HAS_TOUCH) return;
+  // any touch switches to the touch controls; a real mouse or a key switches back
+  window.addEventListener('touchstart', () => { INPUT.lastTouchT = performance.now(); setDevice('touch'); }, { passive: true, capture: true });
+  // emulated mouse events follow touchend, so a long press must not let them through as a real mouse
+  window.addEventListener('touchend', () => { INPUT.lastTouchT = performance.now(); }, { passive: true, capture: true });
   const stick = $('tStick'), knob = stick.querySelector('i');
   const btnEls = [...root.querySelectorAll('.tb')];
   const findBtn = (x, y) => btnEls.find(b => { if (b.classList.contains('hide')) return false; const r = b.getBoundingClientRect(); return x >= r.left - 6 && x <= r.right + 6 && y >= r.top - 6 && y <= r.bottom + 6; });
   const onStart = e => {
-    INPUT.device = 'touch'; initAudio();
+    setDevice('touch'); initAudio();
     for (const t of e.changedTouches) {
       const b = findBtn(t.clientX, t.clientY);
       if (b) { T.btn[t.identifier] = b; b.classList.add('on'); touchBtn(b.dataset.b, true); if (b.dataset.b === 'throw') T.look = T.look || { id: t.identifier, x: t.clientX, y: t.clientY }; continue; }
@@ -122,7 +184,7 @@ function pollGamepad() {
   const ax = gp.axes, dz = v => Math.abs(v) < PAD.dead ? 0 : (v - Math.sign(v) * PAD.dead) / (1 - PAD.dead);
   const lx = dz(ax[0] || 0), ly = dz(ax[1] || 0), rx = dz(ax[2] || 0), ry = dz(ax[3] || 0);
   const any = b.some(Boolean) || Math.abs(lx) + Math.abs(ly) + Math.abs(rx) + Math.abs(ry) > 0.3;
-  if (any) { INPUT.device = 'pad'; INPUT.anyKey = true; }
+  if (any) { setDevice('pad'); INPUT.anyKey = true; }
   const edge = (i, a) => { if (b[i] && !prev[i]) press(a); if (!b[i] && prev[i]) release(a); };
   const L1 = b[4];
   if (L1 && b[5] && !prev[5]) press('promoL'); else edge(5, L1 ? '_' : 'light');
