@@ -301,12 +301,7 @@ page(5, {
         ctx.after(1600, () => { ctx.sfx('chorus'); ctx.haptic('ring'); });
       }, 7400);
     };
-    if (ctx.mode !== 'spread') { run(); return; }
-    // In a spread the reader starts on page 4: the network holds until they come over to this page
-    // (the pointer crosses onto it), or after a fair while on the spread.
-    let started = false;
-    const go = () => { if (!started) { started = true; run(); } };
-    ctx.onPointer((nx, ny, p) => { if (p && p.leaf === ctx.el) go(); });
-    ctx.dwell(22000, go);
+    // (in a spread the reader holds this page's timeline until they reach it)
+    run();
   },
 });

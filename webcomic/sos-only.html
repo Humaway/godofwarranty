@@ -839,8 +839,8 @@ function makePG(page, env) {
     }
     grow(o.p, [x - bw / 2, y - bh / 2, bw, bh]);
     pg.bls.push({ p: o.p, box: [x - bw / 2, y - bh / 2, bw, bh] });
-    const tf = o.r ? ` transform="rotate(${o.r} ${n(x)} ${n(y)})"` : '';
-    return `<g class="bl${o.rot ? ' bl-rot' : ''} ${o.cls || ''}" data-p="${o.p}" data-c="${n(x)},${n(y)}" style="--i:${i}"${o.rot ? ' data-hot="heal"' : ''}${tf}>${shape}${txt}</g>`;
+    const body = o.r ? `<g transform="rotate(${o.r} ${n(x)} ${n(y)})">${shape}${txt}</g>` : shape + txt;
+    return `<g class="bl${o.rot ? ' bl-rot' : ''} ${o.cls || ''}" data-p="${o.p}" data-c="${n(x)},${n(y)}" style="--i:${i}"${o.rot ? ' data-hot="heal"' : ''}>${body}</g>`;
   };
 
   // Caption box, top-left anchored. styles: yellow · paper · black · entity · memory
@@ -867,8 +867,8 @@ function makePG(page, env) {
     t += '</text>';
     grow(o.p, [x, y, w, h]);
     pg.bls.push({ p: o.p, box: [x, y, w, h] });
-    const tf = o.r ? ` transform="rotate(${o.r} ${n(x)} ${n(y)})"` : '';
-    return `<g class="bl cap ${o.cls || ''}" data-p="${o.p}" data-c="${n(x + w / 2)},${n(y + h / 2)}" style="--i:${i}"${tf}>${box}${t}</g>`;
+    const body = o.r ? `<g transform="rotate(${o.r} ${n(x)} ${n(y)})">${box}${t}</g>` : box + t;
+    return `<g class="bl cap ${o.cls || ''}" data-p="${o.p}" data-c="${n(x + w / 2)},${n(y + h / 2)}" style="--i:${i}">${body}</g>`;
   };
 
   // Sound effect lettering, integrated into the art.
@@ -878,7 +878,8 @@ function makePG(page, env) {
     const base = `class="ft-x sfx ${o.cls || ''}" x="${n(x)}" y="${n(y)}" font-size="${n(size)}" text-anchor="${o.anchor || 'middle'}" letter-spacing="${o.ls == null ? 2 : o.ls}" transform="rotate(${rot} ${n(x)} ${n(y)})${o.skew ? ` skewX(${o.skew})` : ''}"`;
     const sw = o.sw == null ? Math.max(4, size * 0.14) : o.sw;
     const out = o.outer ? `<text ${base} fill="none" stroke="${o.outer}" stroke-width="${n(sw * 2.1)}" stroke-linejoin="round">${esc(text)}</text>` : '';
-    return `<g${o.op != null ? ` opacity="${o.op}"` : ''}${o.p ? ` class="bl" data-p="${o.p}" data-c="${n(x)},${n(y)}" style="--i:${pg.bal++}"` : ''}>${out}<text ${base} fill="${o.fill || C.y}" stroke="${o.stroke || C.ink}" stroke-width="${n(sw)}" paint-order="stroke" stroke-linejoin="round">${esc(text)}</text></g>`;
+    const body = `${out}<text ${base} fill="${o.fill || C.y}" stroke="${o.stroke || C.ink}" stroke-width="${n(sw)}" paint-order="stroke" stroke-linejoin="round">${esc(text)}</text>`;
+    return `<g${o.p ? ` class="bl" data-p="${o.p}" data-c="${n(x)},${n(y)}" style="--i:${pg.bal++}"` : ''}>${o.op != null ? `<g opacity="${o.op}">${body}</g>` : body}</g>`;
   };
 
   // Describe a beat for the transcript without drawing anything.
@@ -2282,7 +2283,7 @@ page(3, {
       R(A[0] + A[2] - 170, A[1], 170, A[3], `url(#${gid})`) + readerFig({ x: 905, y: foot + 6, s: 0.62, device: 'phone' });
     a += second ? `<g class="p3-you">${nook}</g>` : `<g class="wide-only">${nook}</g>`;
     // the ghost seven: at the edge of the panel nearest the reader (inside what guided view shows)
-    a += `<text class="ft-x ghost7" x="${guided && !second ? 818 : 930}" y="${guided && !second ? 178 : foot - 6}" font-size="74" fill="${C.y}" stroke="${C.ink}" stroke-width="6" paint-order="stroke" text-anchor="middle">7</text>`;
+    a += `<text class="ft-x ghost7" x="${guided && !second ? 606 : 930}" y="${guided && !second ? 330 : foot - 6}" font-size="74" fill="${C.y}" stroke="${C.ink}" stroke-width="6" paint-order="stroke" text-anchor="middle">7</text>`;
     s += pg.panel('a', A, a, {
       desc: 'Wide group shot: the team in the closed store with tubs, scanners and clipboards — Luka, Chase, Zane, Luke, Zee and Chloe. The Ollie standee stands by the roller door.' + (second ? ' In the dark corner at the far right, beside the accessories wall, someone is standing, lit from below by a small screen.' : ''),
       guided: [{ focus: [40, 40, 590, 540], move: 'cut' }],
@@ -2291,7 +2292,7 @@ page(3, {
     pg.stop('a3', second ? [450, 40, 510, 540] : [450, 40, 400, 540]);
     if (second) pg.stop('a4', [800, 150, 170, 440], { move: 'creep', hold: 1500, lock: 1500 });
     pg.desc(`Name tags: ${Object.values(TAGS).join(' · ')}`);
-    P3.forEach(([w, x], i) => { s += pg.cap({ p: x < 450 ? 'a2' : 'a3', x: x - 66, y: foot - (i % 2 ? 100 : 140), text: TAGS[w], w: 150, size: 19, who: false }); });
+    P3.forEach(([w, x], i) => { s += pg.cap({ p: x < 450 ? 'a2' : 'a3', x: x - 66, y: foot - (i % 2 ? 130 : 170), text: TAGS[w], w: 150, size: 19, who: false }); });
     s += pg.say({ p: 'a', x: 222, y: 128, w: 330, size: 26, text: 'Right. Roller door’s down, bridge is shut, nobody’s going anywhere till the count’s done.', who: 'LUKA', tail: [hd.luka[0] + 10, hd.luka[1] - 34] });
     s += pg.say({ p: 'a', x: 528, y: 100, w: 170, size: 27, text: 'Chat, we’re locked in. Stocky arc.', who: 'ZANE', tail: [hd.zane[0] + 10, hd.zane[1] - 34] });
     s += pg.say({ p: 'a', x: 132, y: 252, text: 'Stocky?', who: 'LUKA', tail: [hd.luka[0] + 4, hd.luka[1] - 30], size: 27 });
@@ -2687,13 +2688,8 @@ page(5, {
         ctx.after(1600, () => { ctx.sfx('chorus'); ctx.haptic('ring'); });
       }, 7400);
     };
-    if (ctx.mode !== 'spread') { run(); return; }
-    // In a spread the reader starts on page 4: the network holds until they come over to this page
-    // (the pointer crosses onto it), or after a fair while on the spread.
-    let started = false;
-    const go = () => { if (!started) { started = true; run(); } };
-    ctx.onPointer((nx, ny, p) => { if (p && p.leaf === ctx.el) go(); });
-    ctx.dwell(22000, go);
+    // (in a spread the reader holds this page's timeline until they reach it)
+    run();
   },
 });
 
@@ -2733,7 +2729,8 @@ function pA_link(pg, p, P, Q, wid = 22) {
   const dx = Q[0] - P[0], dy = Q[1] - P[1], L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, px = -uy * wid / 2, py = ux * wid / 2;
   const band = [[P[0] - ux * 7 + px, P[1] - uy * 7 + py], [Q[0] + ux * 7 + px, Q[1] + uy * 7 + py], [Q[0] + ux * 7 - px, Q[1] + uy * 7 - py], [P[0] - ux * 7 - px, P[1] - uy * 7 - py]];
   const sides = `M${n(P[0] + px)} ${n(P[1] + py)}L${n(Q[0] + px)} ${n(Q[1] + py)}M${n(P[0] - px)} ${n(P[1] - py)}L${n(Q[0] - px)} ${n(Q[1] - py)}`;
-  return `<g class="bl" data-p="${p}" style="--i:${pg.bal - 1}">${Po(band, '#FFFFFF')}${Pa(sides, 'none', st(C.ink, 6))}</g>`;
+  // (data-c at the far end: in guided view the link appears with the balloon it leads to)
+  return `<g class="bl" data-p="${p}" data-c="${n(Q[0])},${n(Q[1])}" style="--i:${pg.bal - 1}">${Po(band, '#FFFFFF')}${Pa(sides, 'none', st(C.ink, 6))}</g>`;
 }
 
 // A thermal ticket whose small print is big enough to read (the kit's ticket prints its extra lines tiny).
@@ -3049,9 +3046,9 @@ page(7, {
     // the line on Zane's phone shuffles one step closer every ~5 seconds
     const q = ctx.q('.pA-shuffle');
     let step = 0;
-    if (q && !ctx.reduced) ctx.every(5000, () => { if (step < 6) { step++; q.style.transform = `scale(${(1 + step * 0.07).toFixed(3)}) translateY(${step * 6}px)`; } });
-    // look away and they come up to the glass
-    ctx.on('tabReturn', () => { const sw = ctx.q('.pA-p7c'); if (sw) sw.classList.add('on'); });
+    if (q && !ctx.reduced) ctx.whenReached(() => ctx.every(5000, () => { if (step < 6) { step++; q.style.transform = `scale(${(1 + step * 0.07).toFixed(3)}) translateY(${step * 6}px)`; } }));
+    // look away and they come up to the glass (only once the reader is on this page)
+    ctx.on('tabReturn', () => { const sw = ctx.q('.pA-p7c'); if (sw && ctx.isReached()) sw.classList.add('on'); });
     ctx.onPanel('f', () => { const p = ctx.q('.pn[data-panel="f"]'); if (p) p.classList.add('go'); ctx.sfx('beep', { v: 0.3 }); }, 4200);
   },
 });
@@ -3632,7 +3629,7 @@ page(11, {
     s += pg.panel('g', Gp, g7, { desc: 'Chloe watches Luke towel off. His mouth is moving. There is no balloon.' });
     pg.desc('(silence)');
     const [g8, o8] = pair(H, false);
-    s += pg.panel('h', H, g8, { desc: 'His mouth is closed and still. Then the balloon arrives.', guided: [{ move: 'cut', lock: 1800 }] });
+    s += pg.panel('h', H, g8, { desc: 'His mouth is closed and still. Then the balloon arrives.', guided: [{ move: 'cut', lock: 2800 }] });
     s += pg.say({ p: 'h', x: H[0] + 270, y: H[1] + 70, text: '…I’m fine. Stop looking at me.', who: 'LUKE', tail: [o8.head[0] + 6, o8.head[1] - 74], w: 240 }).replace('class="bl ', 'class="pA-late ');
     return s;
   },
@@ -3893,7 +3890,7 @@ page(13, {
       ny += L.gap;
     });
     // where a note typed live (the reader leaving the tab and coming back) would go; the rot leaves room for it
-    b += `<g class="pB13-roth" data-y="${n(ny)}" data-k="${notes.length}" data-fs="${fs}" data-lh="${lh}" data-ah="${L.ah}"></g>`;
+    b += `<g class="pB13-roth" data-y="${n(ny)}" data-k="${notes.length}" data-fs="${fs}" data-lh="${lh}" data-ah="${L.ah}" data-stepped="${left ? 1 : 0}"></g>`;
     b += rotPatch({ x: B[0] + B[2], y: B[1], box: [B[0] + B[2] - 210, B[1], 210, 96], reach: 120, count: 24, size: 15, seed: 'p13w0', grow: 4 });
     // guided view holds on the notes until they have landed (they type faster there; see mount)
     s += pg.panel('b', B, b, { desc: 'Screen insert: the interaction notes, author ID JGAUNT, typing themselves in flat rep shorthand. Rot spreads across the window as each note lands.', guided: [{ focus: B, lock: 6500 }] });
@@ -3927,7 +3924,7 @@ page(13, {
     e += `<rect class="pB13-cur" x="${Eb[0] + 60}" y="${Eb[1] + 96}" width="24" height="52" fill="#8A1520"/>`;
     e += rotPatch({ x: Eb[0], y: Eb[1], box: [Eb[0], Eb[1], 70, Eb[3]], reach: 160, count: 34, size: 16, seed: 'p13e', grow: 12, delay: 4 });
     e += R(Eb[0], Eb[1], Eb[2], Eb[3], 'url(#gVig)', 'opacity=".55"');
-    s += pg.panel('e', Eb, e, { desc: 'The cursor blinks. Then it types on its own: 01:13 — Cx ZEE turend. Backspace, backspace. Turned around.', guided: [{ focus: Eb, lock: 2400 }] });
+    s += pg.panel('e', Eb, e, { desc: 'The cursor blinks. Then it types on its own: 01:13 — Cx ZEE turend. Backspace, backspace. Turned around.', guided: [{ focus: Eb, lock: 5200 }] });
     pg.lines.push({ who: 'JARVIS NOTE (typing itself)', text: '01:13 — Cx ZEE turend… turned around.' });
 
     // 6: hook — her eyes
@@ -3981,7 +3978,8 @@ page(13, {
     // a live note, when the reader leaves the tab and comes back while this page is open
     let liveDone = false;
     const liveNote = (away) => {
-      if (liveDone || !host || ctx.dead) return;
+      // not before the reader is on this page, and not twice (the list may already say they stepped away)
+      if (liveDone || !host || ctx.dead || !ctx.isReached() || host.dataset.stepped === '1') return;
       liveDone = true;
       const t = `${pB_hhmm(Date.now())} — Cx stepped away from screen at ${fmtClock(new Date(Date.now() - away))}. Cx came back.`;
       const k = +host.dataset.k;
@@ -4065,7 +4063,7 @@ page(13, {
       ctx.onPanel('c', finishB);
       // reaching panel 5 finishes the notes at once (the reader has moved on) and starts the ghost typing
       ctx.onPanel('e', () => { finishB(); typeE(); });
-    } else ctx.after(900, typeB);
+    } else ctx.whenReached(() => ctx.after(900, typeB));
   },
 });
 
@@ -4380,7 +4378,7 @@ page(15, {
       const [x, y] = ctx.toPage(p.x, p.y);
       if (inside(x, y)) { lastInput = Date.now(); put(x, y); }
     });
-    // touch: drag to sweep; a plain tap still turns the page
+    // touch or mouse: drag to sweep (a drag never turns the page); a plain tap still turns it
     const hit = ctx.q('.pn[data-panel="d"]');
     if (hit) {
       let down = null;
@@ -4390,7 +4388,7 @@ page(15, {
         if (down.moved) { lastInput = Date.now(); const [x, y] = ctx.toPage(e.clientX, e.clientY); put(x, y); }
       };
       const up = () => { if (down && down.moved) setTimeout(() => { Reader.dragging = false; }, 0); down = null; };
-      const dn = (e) => { if (e.pointerType === 'mouse') return; down = { x: e.clientX, y: e.clientY, moved: false }; const [x, y] = ctx.toPage(e.clientX, e.clientY); put(x, y); lastInput = Date.now(); };
+      const dn = (e) => { down = { x: e.clientX, y: e.clientY, moved: false }; const [x, y] = ctx.toPage(e.clientX, e.clientY); put(x, y); lastInput = Date.now(); };
       hit.addEventListener('pointerdown', dn);
       addEventListener('pointermove', mv);
       addEventListener('pointerup', up);
@@ -4407,6 +4405,8 @@ page(15, {
       const sx = bx, sy = by, ease = 2600;
       // in guided view the beam waits on the reserved box until its panel comes up
       if (ctx.mode === 'guided') { t0 = Infinity; ctx.onPanel('d', () => { put(sx, sy); t0 = performance.now() + 600; }); }
+      // in a spread it waits on the reserved box until the reader comes over to this page
+      else if (!ctx.isReached()) { t0 = Infinity; ctx.whenReached(() => { put(sx, sy); t0 = performance.now() + 600; }); }
       ctx.raf((t) => {
         if (Date.now() - lastInput < 2500) return;
         if (t < t0) return;
@@ -4862,7 +4862,7 @@ page(19, {
     let s = pB_style(`.pB19-mir{transform-box:fill-box;transform-origin:center;cursor:pointer}.pB19-cnt{transform-box:fill-box;transform-origin:center}
       .pB19-kp{transform-box:fill-box;transform-origin:center;animation:pulse 1.6s ease-in-out infinite}.pB19-used .pB19-kp,.rm .pB19-kp{animation:none}
       .pB19-fill{transform-box:fill-box;transform-origin:100% 50%;transform:scaleX(0)}
-      .pB19-eatL{transform-box:fill-box;transform-origin:0 50%;animation:pB19e 60s linear forwards}.pB19-eatR{transform-box:fill-box;transform-origin:100% 50%;animation:pB19e 60s linear forwards}
+      .pB19-wait .pB19-eatL,.pB19-wait .pB19-eatR{animation-play-state:paused}.pB19-eatL{transform-box:fill-box;transform-origin:0 50%;animation:pB19e 60s linear forwards}.pB19-eatR{transform-box:fill-box;transform-origin:100% 50%;animation:pB19e 60s linear forwards}
       @keyframes pB19e{from{transform:scaleX(.04)}to{transform:scaleX(1)}}
       .pB19-head{animation:pB19h 4.2s linear infinite}@keyframes pB19h{from{transform:translateX(0)}to{transform:translateX(560px)}}
       .rm .pB19-eatL,.rm .pB19-eatR{animation:none;transform:scaleX(.45)}.rm .pB19-head{animation:none}`);
@@ -4944,6 +4944,8 @@ page(19, {
     return s;
   },
   mount(ctx) {
+    // in a spread, the minute the rot needs to eat the file starts when the reader gets to this page
+    if (!ctx.isReached()) { ctx.svg.classList.add('pB19-wait'); ctx.whenReached(() => ctx.svg.classList.remove('pB19-wait')); }
     const mirrors = ctx.qa('.pB19-mir'), cnts = ctx.qa('.pB19-cnt'), scrub = ctx.q('.pB19-scrub'), fill = ctx.q('.pB19-fill');
     const S = [60, 438, 880, 290], TBx = S[0] + 124, TBw = S[2] - 136, TBy = S[1] + S[3] - 34 + 11;
     let prog = 0, anim = 0;
@@ -5299,7 +5301,8 @@ function pC_link(pg, p, P, Q, wid = 22) {
   const dx = Q[0] - P[0], dy = Q[1] - P[1], L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, px = -uy * wid / 2, py = ux * wid / 2;
   const band = [[P[0] - ux * 7 + px, P[1] - uy * 7 + py], [Q[0] + ux * 7 + px, Q[1] + uy * 7 + py], [Q[0] + ux * 7 - px, Q[1] + uy * 7 - py], [P[0] - ux * 7 - px, P[1] - uy * 7 - py]];
   const sides = `M${n(P[0] + px)} ${n(P[1] + py)}L${n(Q[0] + px)} ${n(Q[1] + py)}M${n(P[0] - px)} ${n(P[1] - py)}L${n(Q[0] - px)} ${n(Q[1] - py)}`;
-  return `<g class="bl" data-p="${p}" style="--i:${pg.bal - 1}">${Po(band, '#FFFFFF')}${Pa(sides, 'none', st(C.ink, 6))}</g>`;
+  // (data-c at the far end: in guided view the link appears with the balloon it leads to)
+  return `<g class="bl" data-p="${p}" data-c="${n(Q[0])},${n(Q[1])}" style="--i:${pg.bal - 1}">${Po(band, '#FFFFFF')}${Pa(sides, 'none', st(C.ink, 6))}</g>`;
 }
 
 page(21, {
@@ -5644,7 +5647,8 @@ page(23, {
     e += Pa(`M${lx} ${ly}C${lx + 30} ${ly - 50} ${lx + 120} ${ly - 40} ${n(oe.head[0] - 30)} ${n(oe.head[1] + 70)}`, 'none', st(C.ink, 9)) + Pa(`M${lx} ${ly}C${lx + 30} ${ly - 50} ${lx + 120} ${ly - 40} ${n(oe.head[0] - 30)} ${n(oe.head[1] + 70)}`, 'none', st(C.y, 6));
     e += `<g transform="translate(${lx} ${ly}) rotate(-10)">${R(-28, 0, 56, 76, '#FFFFFF', st(C.ink, 2.5))}${R(-28, 0, 56, 16, C.y)}${Tx(0, 52, '2IC', 22, C.ink, 'text-anchor="middle"', FONTS.ui)}</g>`;
     e += Ci(lx + 30, ly + 70, 22, '#EEC7A6', st(C.ink, 3.5)) + Pa(`M${lx + 6} ${ly + 86}C${lx + 20} ${ly + 140} ${lx + 60} ${ly + 160} ${lx + 70} ${ly + 200}L${lx + 120} ${ly + 200}C${lx + 100} ${ly + 150} ${lx + 70} ${ly + 110} ${lx + 52} ${ly + 76}Z`, '#6B7076', st(C.ink, 3.5));
-    s += pg.panel('e', Eb, e, { desc: 'Chloe, crying and laughing at once, holding Luka’s lanyard.', guided: [{ focus: [40, 1154, 920, 306], move: 'glide' }] });
+    // (the lock keeps a quick tap from skipping the end card that follows)
+    s += pg.panel('e', Eb, e, { desc: 'Chloe, crying and laughing at once, holding Luka’s lanyard.', guided: [{ focus: [40, 1154, 920, 306], move: 'glide', lock: 3000 }] });
     s += `<g class="pC-end">${Tx(500, 1438, 'THE END', 56, C.ink, 'text-anchor="middle" letter-spacing="14"', FONTS.speech)}</g>`;
     pg.lines.push({ who: 'CAPTION', text: 'THE END' });
     return s;
@@ -5668,7 +5672,7 @@ page(23, {
       ctx.after(3000, () => { btn.textContent = 'Please hold…'; ctx.after(1700, () => ctx.next()); });
     };
     if (ctx.mode === 'guided') ctx.onPanel('e', () => ctx.after(2800, card));
-    else ctx.dwell(ctx.mode === 'spread' ? 30000 : 12000, card);
+    else ctx.dwell(12000, card); // (in a spread this only starts counting once the reader is on this page)
   },
 });
 
@@ -6049,11 +6053,14 @@ page(26, {
         { focus: P, move: 'cut' },
         { focus: [250, 380, 460, 560], move: 'creep', hold: 1500 },
         { focus: [110, 700, 870, 620], move: 'glide' },
-        { focus: P, move: 'glide' },
       ],
     });
-    s += pg.cap({ p: 'a', x: 360, y: 64, text: 'Thank you for holding.', style: 'entity', w: 520, size: 36 });
-    s += pg.cap({ p: 'a', x: 500 - 200, y: 1420, bottom: true, text: 'Your call is important to us.', style: 'entity', w: 420, size: 20 });
+    // guided view: each caption gets its own close-up, then the whole page one last time
+    pg.stop('cA', [330, 40, 600, 130], { move: 'glide' });
+    pg.stop('cB', [280, 1320, 440, 120], { move: 'glide' });
+    pg.stop('aEnd', P, { move: 'glide' });
+    s += pg.cap({ p: 'cA', x: 360, y: 64, text: 'Thank you for holding.', style: 'entity', w: 520, size: 36 });
+    s += pg.cap({ p: 'cB', x: 500 - 200, y: 1420, bottom: true, text: 'Your call is important to us.', style: 'entity', w: 420, size: 20 });
     s += pC_gutterRot([[30, 520, 70], [970, 860, 80], [520, 1470, 60, 30], [30, 1250, 60, 30]], 'pC26gr', 10);
     return s;
   },
@@ -6382,7 +6389,7 @@ const Bus = {
 
 const Reader = {
   idx: 0, stop: 0, mode: null, full: false, leaves: [], vb: null, lockUntil: 0, dragging: false,
-  hiddenTitle: null, titleBase: 'SOS ONLY — Optus Redcliffe', revisitMemo: {},
+  hiddenTitle: null, titleBase: 'SOS ONLY — Optus Redcliffe', revisitMemo: {}, reachedMemo: {},
   sess: { start: Date.now(), leftAt: null, awayCount: 0 },
 };
 
@@ -6432,9 +6439,9 @@ function renderPage(num, env) {
     `<rect class="pgbg" x="-3000" y="-3000" width="7000" height="7500" fill="${bg.startsWith('url') ? (P.gutter === 'whitegrey' ? C.gutterGrey : C.ink) : bg}"/>` +
     (bg.startsWith('url') ? `<rect width="1000" height="1500" fill="${bg}"/>` : '') +
     body +
-    `<rect width="1000" height="1500" fill="url(#grain)" opacity="${P.gutter === 'black' ? 0.35 : 0.6}" pointer-events="none"/>` +
     `<text class="ft-x folio" x="${P.side === 'left' ? 34 : 966}" y="1490" font-size="20" fill="${folioCol}" text-anchor="middle">${num}</text>` +
     `<path class="gmask" fill="${{ white: C.paper, warm: '#FFF4E0', whitegrey: C.gutterGrey, grey: C.gutterGrey }[P.gutter] || C.ink}" fill-rule="evenodd" d="" pointer-events="none"/>` +
+    `<rect width="1000" height="1500" fill="url(#grain)" opacity="${P.gutter === 'black' ? 0.35 : 0.6}" pointer-events="none"/>` +
     `</svg>`;
   return { svg, pg };
 }
@@ -6493,7 +6500,8 @@ function buildStops(pg) {
     const [x, y, w, h] = b;
     const sc = Math.min(W / (w + 28), H / (h + 28));
     const k = Math.min(3, Math.max(1, Math.ceil(0.54 / sc - 0.05)));
-    if (k === 1 || w < h * 0.9) { out.push({ p: p.id, focus: b, move: 'glide' }); continue; }
+    // (a panel with no lettering is never split: it would only cut the art in half)
+    if (k === 1 || w < h * 0.9 || !pg.bls.some((q) => q.p === p.id)) { out.push({ p: p.id, focus: b, move: 'glide' }); continue; }
     const seg = w / k;
     const segs = [];
     for (let i = 0; i < k; i++) { const x0 = x + seg * i - (i ? seg * 0.08 : 0); segs.push([x0, x0 + seg * (i ? 1.08 : 1.04)]); }
@@ -6514,7 +6522,7 @@ function buildStops(pg) {
 function revealBalloons(L, upto) {
   const stops = L.stops, first = {}, last = {};
   stops.forEach((st2, i) => { if (!(st2.p in first)) first[st2.p] = i; last[st2.p] = i; });
-  let j = 0;
+  const fresh = [];
   L.svg.querySelectorAll('.bl').forEach((b) => {
     const p = b.dataset.p;
     let on;
@@ -6522,13 +6530,34 @@ function revealBalloons(L, upto) {
     else if (last[p] <= upto) on = true;
     else if (first[p] > upto) on = false;
     else {
+      // lettering a page drew by hand has no data-c: use its geometry
+      if (!b.dataset.c) { try { const bb = b.getBBox(); b.dataset.c = `${n(bb.x + bb.width / 2)},${n(bb.y + bb.height / 2)}`; } catch (e) { /* not laid out */ } }
       const c = b.dataset.c ? b.dataset.c.split(',').map(Number) : null;
       const own = stops.filter((st2) => st2.p === p);
       on = !c || !own.some((st2) => inBox(st2.focus, c)) || stops.slice(0, upto + 1).some((st2) => st2.p === p && inBox(st2.focus, c));
     }
-    if (on && !b.classList.contains('on')) { b.style.setProperty('--j', j++); b.classList.add('on'); }
+    if (on && !b.classList.contains('on')) fresh.push(b);
     if (!on) b.classList.remove('on');
   });
+  // pop in reading order; sound effects come at once, and dialogue never waits more than three beats
+  fresh.sort((a, b) => (parseFloat(a.style.getPropertyValue('--i')) || 0) - (parseFloat(b.style.getPropertyValue('--i')) || 0));
+  let j = 0;
+  for (const b of fresh) {
+    const sfxOnly = !!b.querySelector('.sfx') && !b.querySelector('ellipse, rect, path:not(.sfx)');
+    b.style.setProperty('--j', sfxOnly ? 0 : Math.min(3, j++));
+    b.classList.add('on');
+  }
+}
+
+// The frame for a stop: its focus, grown to take in whole any balloon first shown there.
+function stopFrame(L, s) {
+  let x0 = s.focus[0], y0 = s.focus[1], x1 = x0 + s.focus[2], y1 = y0 + s.focus[3];
+  for (const b of (L.pg && L.pg.bls) || []) {
+    if (b.p !== s.p || !inBox(s.focus, [b.box[0] + b.box[2] / 2, b.box[1] + b.box[3] / 2])) continue;
+    x0 = Math.min(x0, b.box[0] - 6); y0 = Math.min(y0, b.box[1] - 6);
+    x1 = Math.max(x1, b.box[0] + b.box[2] + 6); y1 = Math.max(y1, b.box[1] + b.box[3] + 6);
+  }
+  return [x0, y0, x1 - x0, y1 - y0];
 }
 
 function goStop(k, o = {}) {
@@ -6538,11 +6567,14 @@ function goStop(k, o = {}) {
   Reader.stop = k;
   Reader.full = false;
   const s = L.stops[k];
-  const vb = fitVB(s.focus);
+  s.frame = s.frame || stopFrame(L, s);
+  const vb = fitVB(s.frame);
   const from = o.from || Reader.vb;
-  animateVB(L.svg, from, vb, o.move ? MOVE_MS[o.move] : MOVE_MS[s.move] ?? 380, s.focus.map((v, i) => v + (i < 2 ? -6 : 12)));
+  const ms = reducedMotion() ? 0 : o.move ? MOVE_MS[o.move] : MOVE_MS[s.move] ?? 380;
+  animateVB(L.svg, from, vb, ms, s.frame.map((v, i) => v + (i < 2 ? -6 : 12)));
   revealBalloons(L, k);
-  if (s.lock || s.hold) Reader.lockUntil = Date.now() + Math.max(s.lock || 0, s.hold || 0);
+  // lock: the next tap waits this long from the start of the stop; hold: the camera rests this long after it arrives
+  if (s.lock || s.hold) Reader.lockUntil = Date.now() + Math.max(s.lock || 0, s.hold ? ms + s.hold : 0);
   if (!o.silent) L.ctx && L.ctx._panel(s.p);
   progress();
   debugInfo();
@@ -6565,12 +6597,14 @@ function makeCtx(i, el, svg, pg, o) {
   // In spread mode the right-hand page mounts while the reader is still on the left one, so its timed
   // beats wait until the reader gets there: the pointer reaches it, they touch it, or a reading-time
   // estimate for the left page runs out.
-  let reached = !(Reader.mode === 'spread' && el.classList.contains('right') && o.leftChars != null);
+  let reached = !(Reader.mode === 'spread' && el.classList.contains('right') && o.leftChars != null) ||
+    o.fromLeaf === i || !!(o.rerender && Reader.reachedMemo[i]);
   const waiting = [];
   const whenReached = (fn) => (reached ? fn() : waiting.push(fn));
   const reach = () => {
     if (reached || ctx.dead) return;
     reached = true;
+    Reader.reachedMemo[i] = true;
     waiting.splice(0).forEach((f) => { try { f(); } catch (e) { console.error(e); } });
   };
   const ctx = {
@@ -6665,7 +6699,14 @@ function makeCtx(i, el, svg, pg, o) {
   if (!reached) {
     const readMs = clamp(5000 + o.leftChars * 55, 7000, 25000);
     ctx.after(readMs, reach);
-    ctx.on('pointer', (p) => { if (p.leaf === el) reach(); });
+    // the pointer has to arrive on the page: after a click-turn it is often already resting there
+    let armed = false, firstPos = null;
+    ctx.on('pointer', (p) => {
+      if (p.tilt) return;
+      if (p.leaf !== el) { armed = true; return; }
+      if (!firstPos) firstPos = [p.x, p.y];
+      if (armed || Math.hypot(p.x - firstPos[0], p.y - firstPos[1]) > 90) reach();
+    });
     const down = () => reach();
     el.addEventListener('pointerdown', down);
     cleanups.push(() => el.removeEventListener('pointerdown', down));
@@ -6998,10 +7039,23 @@ function healBalloon(el) {
 
 // Taps find hotspots anywhere under the finger, not just the top-most element: lighting and
 // vignette layers are often drawn over a hidden Ollie.
-function hotspot(target, e) {
+function hotspot(target, e, dt = 1000) {
   const stack = e && document.elementsFromPoint ? document.elementsFromPoint(e.clientX, e.clientY) : [];
   if (!stack.includes(target)) stack.unshift(target);
+  // guided view: a tap on the dimmed surround is just a tap, and balloons not yet shown aren't there
+  const G = Reader.mode === 'guided' && !Reader.full ? Reader.leaves[0] : null;
+  const st0 = G && G.stops && G.stops[Reader.stop];
+  if (st0 && G.svg && e) {
+    const m = G.svg.getScreenCTM();
+    if (m) {
+      const q = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+      const f = st0.frame || st0.focus;
+      if (!inBox([f[0] - 10, f[1] - 10, f[2] + 20, f[3] + 20], [q.x, q.y])) return false;
+    }
+  }
+  const shown = (el) => { const b = G && el.closest && el.closest('.bl'); return !b || b.classList.contains('on'); };
   for (const el of stack) {
+    if (!shown(el)) continue;
     for (const L of Reader.leaves) {
       if (!L.ctx || !L.el.contains(el)) continue;
       for (const [sel, fn] of L.ctx._taps) {
@@ -7011,9 +7065,12 @@ function hotspot(target, e) {
     }
   }
   for (const el of stack) {
+    if (!shown(el)) continue;
     const hot = el.closest && el.closest('[data-hot]');
     if (!hot) continue;
     const k = hot.dataset.hot;
+    // a quick tap on a press-and-hold strip is a tap, not a hold
+    if (k === 'hold' && dt < 250) continue;
     // an unmoved press on a drag area: in guided view it may fill the screen, so it still turns the page
     if (k === 'drag') { if (Reader.mode === 'guided') continue; return true; }
     if (k === 'ollie') { foundOllie(hot); return true; }
@@ -7069,7 +7126,7 @@ function bindInput() {
     const dx = e.clientX - d.x, dy = e.clientY - d.y, dt = Date.now() - d.t;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4 && dt < 800) { dx < 0 ? next() : prev(); return; }
     if (Math.hypot(dx, dy) > 12 || dt > 650) return;
-    if (hotspot(d.target, e)) return;
+    if (hotspot(d.target, e, dt)) return;
     const zone = e.clientX / innerWidth;
     const act = () => {
       if (zone < 1 / 3) prev();

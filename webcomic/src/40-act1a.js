@@ -357,7 +357,7 @@ page(3, {
       R(A[0] + A[2] - 170, A[1], 170, A[3], `url(#${gid})`) + readerFig({ x: 905, y: foot + 6, s: 0.62, device: 'phone' });
     a += second ? `<g class="p3-you">${nook}</g>` : `<g class="wide-only">${nook}</g>`;
     // the ghost seven: at the edge of the panel nearest the reader (inside what guided view shows)
-    a += `<text class="ft-x ghost7" x="${guided && !second ? 818 : 930}" y="${guided && !second ? 178 : foot - 6}" font-size="74" fill="${C.y}" stroke="${C.ink}" stroke-width="6" paint-order="stroke" text-anchor="middle">7</text>`;
+    a += `<text class="ft-x ghost7" x="${guided && !second ? 606 : 930}" y="${guided && !second ? 330 : foot - 6}" font-size="74" fill="${C.y}" stroke="${C.ink}" stroke-width="6" paint-order="stroke" text-anchor="middle">7</text>`;
     s += pg.panel('a', A, a, {
       desc: 'Wide group shot: the team in the closed store with tubs, scanners and clipboards — Luka, Chase, Zane, Luke, Zee and Chloe. The Ollie standee stands by the roller door.' + (second ? ' In the dark corner at the far right, beside the accessories wall, someone is standing, lit from below by a small screen.' : ''),
       guided: [{ focus: [40, 40, 590, 540], move: 'cut' }],
@@ -366,7 +366,7 @@ page(3, {
     pg.stop('a3', second ? [450, 40, 510, 540] : [450, 40, 400, 540]);
     if (second) pg.stop('a4', [800, 150, 170, 440], { move: 'creep', hold: 1500, lock: 1500 });
     pg.desc(`Name tags: ${Object.values(TAGS).join(' · ')}`);
-    P3.forEach(([w, x], i) => { s += pg.cap({ p: x < 450 ? 'a2' : 'a3', x: x - 66, y: foot - (i % 2 ? 100 : 140), text: TAGS[w], w: 150, size: 19, who: false }); });
+    P3.forEach(([w, x], i) => { s += pg.cap({ p: x < 450 ? 'a2' : 'a3', x: x - 66, y: foot - (i % 2 ? 130 : 170), text: TAGS[w], w: 150, size: 19, who: false }); });
     s += pg.say({ p: 'a', x: 222, y: 128, w: 330, size: 26, text: 'Right. Roller door’s down, bridge is shut, nobody’s going anywhere till the count’s done.', who: 'LUKA', tail: [hd.luka[0] + 10, hd.luka[1] - 34] });
     s += pg.say({ p: 'a', x: 528, y: 100, w: 170, size: 27, text: 'Chat, we’re locked in. Stocky arc.', who: 'ZANE', tail: [hd.zane[0] + 10, hd.zane[1] - 34] });
     s += pg.say({ p: 'a', x: 132, y: 252, text: 'Stocky?', who: 'LUKA', tail: [hd.luka[0] + 4, hd.luka[1] - 30], size: 27 });

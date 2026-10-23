@@ -33,7 +33,8 @@ function pA_link(pg, p, P, Q, wid = 22) {
   const dx = Q[0] - P[0], dy = Q[1] - P[1], L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, px = -uy * wid / 2, py = ux * wid / 2;
   const band = [[P[0] - ux * 7 + px, P[1] - uy * 7 + py], [Q[0] + ux * 7 + px, Q[1] + uy * 7 + py], [Q[0] + ux * 7 - px, Q[1] + uy * 7 - py], [P[0] - ux * 7 - px, P[1] - uy * 7 - py]];
   const sides = `M${n(P[0] + px)} ${n(P[1] + py)}L${n(Q[0] + px)} ${n(Q[1] + py)}M${n(P[0] - px)} ${n(P[1] - py)}L${n(Q[0] - px)} ${n(Q[1] - py)}`;
-  return `<g class="bl" data-p="${p}" style="--i:${pg.bal - 1}">${Po(band, '#FFFFFF')}${Pa(sides, 'none', st(C.ink, 6))}</g>`;
+  // (data-c at the far end: in guided view the link appears with the balloon it leads to)
+  return `<g class="bl" data-p="${p}" data-c="${n(Q[0])},${n(Q[1])}" style="--i:${pg.bal - 1}">${Po(band, '#FFFFFF')}${Pa(sides, 'none', st(C.ink, 6))}</g>`;
 }
 
 // A thermal ticket whose small print is big enough to read (the kit's ticket prints its extra lines tiny).
@@ -349,9 +350,9 @@ page(7, {
     // the line on Zane's phone shuffles one step closer every ~5 seconds
     const q = ctx.q('.pA-shuffle');
     let step = 0;
-    if (q && !ctx.reduced) ctx.every(5000, () => { if (step < 6) { step++; q.style.transform = `scale(${(1 + step * 0.07).toFixed(3)}) translateY(${step * 6}px)`; } });
-    // look away and they come up to the glass
-    ctx.on('tabReturn', () => { const sw = ctx.q('.pA-p7c'); if (sw) sw.classList.add('on'); });
+    if (q && !ctx.reduced) ctx.whenReached(() => ctx.every(5000, () => { if (step < 6) { step++; q.style.transform = `scale(${(1 + step * 0.07).toFixed(3)}) translateY(${step * 6}px)`; } }));
+    // look away and they come up to the glass (only once the reader is on this page)
+    ctx.on('tabReturn', () => { const sw = ctx.q('.pA-p7c'); if (sw && ctx.isReached()) sw.classList.add('on'); });
     ctx.onPanel('f', () => { const p = ctx.q('.pn[data-panel="f"]'); if (p) p.classList.add('go'); ctx.sfx('beep', { v: 0.3 }); }, 4200);
   },
 });
@@ -932,7 +933,7 @@ page(11, {
     s += pg.panel('g', Gp, g7, { desc: 'Chloe watches Luke towel off. His mouth is moving. There is no balloon.' });
     pg.desc('(silence)');
     const [g8, o8] = pair(H, false);
-    s += pg.panel('h', H, g8, { desc: 'His mouth is closed and still. Then the balloon arrives.', guided: [{ move: 'cut', lock: 1800 }] });
+    s += pg.panel('h', H, g8, { desc: 'His mouth is closed and still. Then the balloon arrives.', guided: [{ move: 'cut', lock: 2800 }] });
     s += pg.say({ p: 'h', x: H[0] + 270, y: H[1] + 70, text: '…I’m fine. Stop looking at me.', who: 'LUKE', tail: [o8.head[0] + 6, o8.head[1] - 74], w: 240 }).replace('class="bl ', 'class="pA-late ');
     return s;
   },

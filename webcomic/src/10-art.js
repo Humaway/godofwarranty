@@ -372,8 +372,8 @@ function makePG(page, env) {
     }
     grow(o.p, [x - bw / 2, y - bh / 2, bw, bh]);
     pg.bls.push({ p: o.p, box: [x - bw / 2, y - bh / 2, bw, bh] });
-    const tf = o.r ? ` transform="rotate(${o.r} ${n(x)} ${n(y)})"` : '';
-    return `<g class="bl${o.rot ? ' bl-rot' : ''} ${o.cls || ''}" data-p="${o.p}" data-c="${n(x)},${n(y)}" style="--i:${i}"${o.rot ? ' data-hot="heal"' : ''}${tf}>${shape}${txt}</g>`;
+    const body = o.r ? `<g transform="rotate(${o.r} ${n(x)} ${n(y)})">${shape}${txt}</g>` : shape + txt;
+    return `<g class="bl${o.rot ? ' bl-rot' : ''} ${o.cls || ''}" data-p="${o.p}" data-c="${n(x)},${n(y)}" style="--i:${i}"${o.rot ? ' data-hot="heal"' : ''}>${body}</g>`;
   };
 
   // Caption box, top-left anchored. styles: yellow · paper · black · entity · memory
@@ -400,8 +400,8 @@ function makePG(page, env) {
     t += '</text>';
     grow(o.p, [x, y, w, h]);
     pg.bls.push({ p: o.p, box: [x, y, w, h] });
-    const tf = o.r ? ` transform="rotate(${o.r} ${n(x)} ${n(y)})"` : '';
-    return `<g class="bl cap ${o.cls || ''}" data-p="${o.p}" data-c="${n(x + w / 2)},${n(y + h / 2)}" style="--i:${i}"${tf}>${box}${t}</g>`;
+    const body = o.r ? `<g transform="rotate(${o.r} ${n(x)} ${n(y)})">${box}${t}</g>` : box + t;
+    return `<g class="bl cap ${o.cls || ''}" data-p="${o.p}" data-c="${n(x + w / 2)},${n(y + h / 2)}" style="--i:${i}">${body}</g>`;
   };
 
   // Sound effect lettering, integrated into the art.
@@ -411,7 +411,8 @@ function makePG(page, env) {
     const base = `class="ft-x sfx ${o.cls || ''}" x="${n(x)}" y="${n(y)}" font-size="${n(size)}" text-anchor="${o.anchor || 'middle'}" letter-spacing="${o.ls == null ? 2 : o.ls}" transform="rotate(${rot} ${n(x)} ${n(y)})${o.skew ? ` skewX(${o.skew})` : ''}"`;
     const sw = o.sw == null ? Math.max(4, size * 0.14) : o.sw;
     const out = o.outer ? `<text ${base} fill="none" stroke="${o.outer}" stroke-width="${n(sw * 2.1)}" stroke-linejoin="round">${esc(text)}</text>` : '';
-    return `<g${o.op != null ? ` opacity="${o.op}"` : ''}${o.p ? ` class="bl" data-p="${o.p}" data-c="${n(x)},${n(y)}" style="--i:${pg.bal++}"` : ''}>${out}<text ${base} fill="${o.fill || C.y}" stroke="${o.stroke || C.ink}" stroke-width="${n(sw)}" paint-order="stroke" stroke-linejoin="round">${esc(text)}</text></g>`;
+    const body = `${out}<text ${base} fill="${o.fill || C.y}" stroke="${o.stroke || C.ink}" stroke-width="${n(sw)}" paint-order="stroke" stroke-linejoin="round">${esc(text)}</text>`;
+    return `<g${o.p ? ` class="bl" data-p="${o.p}" data-c="${n(x)},${n(y)}" style="--i:${pg.bal++}"` : ''}>${o.op != null ? `<g opacity="${o.op}">${body}</g>` : body}</g>`;
   };
 
   // Describe a beat for the transcript without drawing anything.

@@ -308,7 +308,8 @@ function pC_link(pg, p, P, Q, wid = 22) {
   const dx = Q[0] - P[0], dy = Q[1] - P[1], L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, px = -uy * wid / 2, py = ux * wid / 2;
   const band = [[P[0] - ux * 7 + px, P[1] - uy * 7 + py], [Q[0] + ux * 7 + px, Q[1] + uy * 7 + py], [Q[0] + ux * 7 - px, Q[1] + uy * 7 - py], [P[0] - ux * 7 - px, P[1] - uy * 7 - py]];
   const sides = `M${n(P[0] + px)} ${n(P[1] + py)}L${n(Q[0] + px)} ${n(Q[1] + py)}M${n(P[0] - px)} ${n(P[1] - py)}L${n(Q[0] - px)} ${n(Q[1] - py)}`;
-  return `<g class="bl" data-p="${p}" style="--i:${pg.bal - 1}">${Po(band, '#FFFFFF')}${Pa(sides, 'none', st(C.ink, 6))}</g>`;
+  // (data-c at the far end: in guided view the link appears with the balloon it leads to)
+  return `<g class="bl" data-p="${p}" data-c="${n(Q[0])},${n(Q[1])}" style="--i:${pg.bal - 1}">${Po(band, '#FFFFFF')}${Pa(sides, 'none', st(C.ink, 6))}</g>`;
 }
 
 page(21, {
@@ -653,7 +654,8 @@ page(23, {
     e += Pa(`M${lx} ${ly}C${lx + 30} ${ly - 50} ${lx + 120} ${ly - 40} ${n(oe.head[0] - 30)} ${n(oe.head[1] + 70)}`, 'none', st(C.ink, 9)) + Pa(`M${lx} ${ly}C${lx + 30} ${ly - 50} ${lx + 120} ${ly - 40} ${n(oe.head[0] - 30)} ${n(oe.head[1] + 70)}`, 'none', st(C.y, 6));
     e += `<g transform="translate(${lx} ${ly}) rotate(-10)">${R(-28, 0, 56, 76, '#FFFFFF', st(C.ink, 2.5))}${R(-28, 0, 56, 16, C.y)}${Tx(0, 52, '2IC', 22, C.ink, 'text-anchor="middle"', FONTS.ui)}</g>`;
     e += Ci(lx + 30, ly + 70, 22, '#EEC7A6', st(C.ink, 3.5)) + Pa(`M${lx + 6} ${ly + 86}C${lx + 20} ${ly + 140} ${lx + 60} ${ly + 160} ${lx + 70} ${ly + 200}L${lx + 120} ${ly + 200}C${lx + 100} ${ly + 150} ${lx + 70} ${ly + 110} ${lx + 52} ${ly + 76}Z`, '#6B7076', st(C.ink, 3.5));
-    s += pg.panel('e', Eb, e, { desc: 'Chloe, crying and laughing at once, holding Luka’s lanyard.', guided: [{ focus: [40, 1154, 920, 306], move: 'glide' }] });
+    // (the lock keeps a quick tap from skipping the end card that follows)
+    s += pg.panel('e', Eb, e, { desc: 'Chloe, crying and laughing at once, holding Luka’s lanyard.', guided: [{ focus: [40, 1154, 920, 306], move: 'glide', lock: 3000 }] });
     s += `<g class="pC-end">${Tx(500, 1438, 'THE END', 56, C.ink, 'text-anchor="middle" letter-spacing="14"', FONTS.speech)}</g>`;
     pg.lines.push({ who: 'CAPTION', text: 'THE END' });
     return s;
@@ -677,7 +679,7 @@ page(23, {
       ctx.after(3000, () => { btn.textContent = 'Please hold…'; ctx.after(1700, () => ctx.next()); });
     };
     if (ctx.mode === 'guided') ctx.onPanel('e', () => ctx.after(2800, card));
-    else ctx.dwell(ctx.mode === 'spread' ? 30000 : 12000, card);
+    else ctx.dwell(12000, card); // (in a spread this only starts counting once the reader is on this page)
   },
 });
 
@@ -1058,11 +1060,14 @@ page(26, {
         { focus: P, move: 'cut' },
         { focus: [250, 380, 460, 560], move: 'creep', hold: 1500 },
         { focus: [110, 700, 870, 620], move: 'glide' },
-        { focus: P, move: 'glide' },
       ],
     });
-    s += pg.cap({ p: 'a', x: 360, y: 64, text: 'Thank you for holding.', style: 'entity', w: 520, size: 36 });
-    s += pg.cap({ p: 'a', x: 500 - 200, y: 1420, bottom: true, text: 'Your call is important to us.', style: 'entity', w: 420, size: 20 });
+    // guided view: each caption gets its own close-up, then the whole page one last time
+    pg.stop('cA', [330, 40, 600, 130], { move: 'glide' });
+    pg.stop('cB', [280, 1320, 440, 120], { move: 'glide' });
+    pg.stop('aEnd', P, { move: 'glide' });
+    s += pg.cap({ p: 'cA', x: 360, y: 64, text: 'Thank you for holding.', style: 'entity', w: 520, size: 36 });
+    s += pg.cap({ p: 'cB', x: 500 - 200, y: 1420, bottom: true, text: 'Your call is important to us.', style: 'entity', w: 420, size: 20 });
     s += pC_gutterRot([[30, 520, 70], [970, 860, 80], [520, 1470, 60, 30], [30, 1250, 60, 30]], 'pC26gr', 10);
     return s;
   },

@@ -88,7 +88,7 @@ page(13, {
       ny += L.gap;
     });
     // where a note typed live (the reader leaving the tab and coming back) would go; the rot leaves room for it
-    b += `<g class="pB13-roth" data-y="${n(ny)}" data-k="${notes.length}" data-fs="${fs}" data-lh="${lh}" data-ah="${L.ah}"></g>`;
+    b += `<g class="pB13-roth" data-y="${n(ny)}" data-k="${notes.length}" data-fs="${fs}" data-lh="${lh}" data-ah="${L.ah}" data-stepped="${left ? 1 : 0}"></g>`;
     b += rotPatch({ x: B[0] + B[2], y: B[1], box: [B[0] + B[2] - 210, B[1], 210, 96], reach: 120, count: 24, size: 15, seed: 'p13w0', grow: 4 });
     // guided view holds on the notes until they have landed (they type faster there; see mount)
     s += pg.panel('b', B, b, { desc: 'Screen insert: the interaction notes, author ID JGAUNT, typing themselves in flat rep shorthand. Rot spreads across the window as each note lands.', guided: [{ focus: B, lock: 6500 }] });
@@ -122,7 +122,7 @@ page(13, {
     e += `<rect class="pB13-cur" x="${Eb[0] + 60}" y="${Eb[1] + 96}" width="24" height="52" fill="#8A1520"/>`;
     e += rotPatch({ x: Eb[0], y: Eb[1], box: [Eb[0], Eb[1], 70, Eb[3]], reach: 160, count: 34, size: 16, seed: 'p13e', grow: 12, delay: 4 });
     e += R(Eb[0], Eb[1], Eb[2], Eb[3], 'url(#gVig)', 'opacity=".55"');
-    s += pg.panel('e', Eb, e, { desc: 'The cursor blinks. Then it types on its own: 01:13 — Cx ZEE turend. Backspace, backspace. Turned around.', guided: [{ focus: Eb, lock: 2400 }] });
+    s += pg.panel('e', Eb, e, { desc: 'The cursor blinks. Then it types on its own: 01:13 — Cx ZEE turend. Backspace, backspace. Turned around.', guided: [{ focus: Eb, lock: 5200 }] });
     pg.lines.push({ who: 'JARVIS NOTE (typing itself)', text: '01:13 — Cx ZEE turend… turned around.' });
 
     // 6: hook — her eyes
@@ -176,7 +176,8 @@ page(13, {
     // a live note, when the reader leaves the tab and comes back while this page is open
     let liveDone = false;
     const liveNote = (away) => {
-      if (liveDone || !host || ctx.dead) return;
+      // not before the reader is on this page, and not twice (the list may already say they stepped away)
+      if (liveDone || !host || ctx.dead || !ctx.isReached() || host.dataset.stepped === '1') return;
       liveDone = true;
       const t = `${pB_hhmm(Date.now())} — Cx stepped away from screen at ${fmtClock(new Date(Date.now() - away))}. Cx came back.`;
       const k = +host.dataset.k;
@@ -260,7 +261,7 @@ page(13, {
       ctx.onPanel('c', finishB);
       // reaching panel 5 finishes the notes at once (the reader has moved on) and starts the ghost typing
       ctx.onPanel('e', () => { finishB(); typeE(); });
-    } else ctx.after(900, typeB);
+    } else ctx.whenReached(() => ctx.after(900, typeB));
   },
 });
 
@@ -575,7 +576,7 @@ page(15, {
       const [x, y] = ctx.toPage(p.x, p.y);
       if (inside(x, y)) { lastInput = Date.now(); put(x, y); }
     });
-    // touch: drag to sweep; a plain tap still turns the page
+    // touch or mouse: drag to sweep (a drag never turns the page); a plain tap still turns it
     const hit = ctx.q('.pn[data-panel="d"]');
     if (hit) {
       let down = null;
@@ -585,7 +586,7 @@ page(15, {
         if (down.moved) { lastInput = Date.now(); const [x, y] = ctx.toPage(e.clientX, e.clientY); put(x, y); }
       };
       const up = () => { if (down && down.moved) setTimeout(() => { Reader.dragging = false; }, 0); down = null; };
-      const dn = (e) => { if (e.pointerType === 'mouse') return; down = { x: e.clientX, y: e.clientY, moved: false }; const [x, y] = ctx.toPage(e.clientX, e.clientY); put(x, y); lastInput = Date.now(); };
+      const dn = (e) => { down = { x: e.clientX, y: e.clientY, moved: false }; const [x, y] = ctx.toPage(e.clientX, e.clientY); put(x, y); lastInput = Date.now(); };
       hit.addEventListener('pointerdown', dn);
       addEventListener('pointermove', mv);
       addEventListener('pointerup', up);
@@ -602,6 +603,8 @@ page(15, {
       const sx = bx, sy = by, ease = 2600;
       // in guided view the beam waits on the reserved box until its panel comes up
       if (ctx.mode === 'guided') { t0 = Infinity; ctx.onPanel('d', () => { put(sx, sy); t0 = performance.now() + 600; }); }
+      // in a spread it waits on the reserved box until the reader comes over to this page
+      else if (!ctx.isReached()) { t0 = Infinity; ctx.whenReached(() => { put(sx, sy); t0 = performance.now() + 600; }); }
       ctx.raf((t) => {
         if (Date.now() - lastInput < 2500) return;
         if (t < t0) return;
@@ -1057,7 +1060,7 @@ page(19, {
     let s = pB_style(`.pB19-mir{transform-box:fill-box;transform-origin:center;cursor:pointer}.pB19-cnt{transform-box:fill-box;transform-origin:center}
       .pB19-kp{transform-box:fill-box;transform-origin:center;animation:pulse 1.6s ease-in-out infinite}.pB19-used .pB19-kp,.rm .pB19-kp{animation:none}
       .pB19-fill{transform-box:fill-box;transform-origin:100% 50%;transform:scaleX(0)}
-      .pB19-eatL{transform-box:fill-box;transform-origin:0 50%;animation:pB19e 60s linear forwards}.pB19-eatR{transform-box:fill-box;transform-origin:100% 50%;animation:pB19e 60s linear forwards}
+      .pB19-wait .pB19-eatL,.pB19-wait .pB19-eatR{animation-play-state:paused}.pB19-eatL{transform-box:fill-box;transform-origin:0 50%;animation:pB19e 60s linear forwards}.pB19-eatR{transform-box:fill-box;transform-origin:100% 50%;animation:pB19e 60s linear forwards}
       @keyframes pB19e{from{transform:scaleX(.04)}to{transform:scaleX(1)}}
       .pB19-head{animation:pB19h 4.2s linear infinite}@keyframes pB19h{from{transform:translateX(0)}to{transform:translateX(560px)}}
       .rm .pB19-eatL,.rm .pB19-eatR{animation:none;transform:scaleX(.45)}.rm .pB19-head{animation:none}`);
@@ -1139,6 +1142,8 @@ page(19, {
     return s;
   },
   mount(ctx) {
+    // in a spread, the minute the rot needs to eat the file starts when the reader gets to this page
+    if (!ctx.isReached()) { ctx.svg.classList.add('pB19-wait'); ctx.whenReached(() => ctx.svg.classList.remove('pB19-wait')); }
     const mirrors = ctx.qa('.pB19-mir'), cnts = ctx.qa('.pB19-cnt'), scrub = ctx.q('.pB19-scrub'), fill = ctx.q('.pB19-fill');
     const S = [60, 438, 880, 290], TBx = S[0] + 124, TBw = S[2] - 136, TBy = S[1] + S[3] - 34 + 11;
     let prog = 0, anim = 0;

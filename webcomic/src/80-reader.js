@@ -14,7 +14,7 @@ const Bus = {
 
 const Reader = {
   idx: 0, stop: 0, mode: null, full: false, leaves: [], vb: null, lockUntil: 0, dragging: false,
-  hiddenTitle: null, titleBase: 'SOS ONLY — Optus Redcliffe', revisitMemo: {},
+  hiddenTitle: null, titleBase: 'SOS ONLY — Optus Redcliffe', revisitMemo: {}, reachedMemo: {},
   sess: { start: Date.now(), leftAt: null, awayCount: 0 },
 };
 
@@ -64,9 +64,9 @@ function renderPage(num, env) {
     `<rect class="pgbg" x="-3000" y="-3000" width="7000" height="7500" fill="${bg.startsWith('url') ? (P.gutter === 'whitegrey' ? C.gutterGrey : C.ink) : bg}"/>` +
     (bg.startsWith('url') ? `<rect width="1000" height="1500" fill="${bg}"/>` : '') +
     body +
-    `<rect width="1000" height="1500" fill="url(#grain)" opacity="${P.gutter === 'black' ? 0.35 : 0.6}" pointer-events="none"/>` +
     `<text class="ft-x folio" x="${P.side === 'left' ? 34 : 966}" y="1490" font-size="20" fill="${folioCol}" text-anchor="middle">${num}</text>` +
     `<path class="gmask" fill="${{ white: C.paper, warm: '#FFF4E0', whitegrey: C.gutterGrey, grey: C.gutterGrey }[P.gutter] || C.ink}" fill-rule="evenodd" d="" pointer-events="none"/>` +
+    `<rect width="1000" height="1500" fill="url(#grain)" opacity="${P.gutter === 'black' ? 0.35 : 0.6}" pointer-events="none"/>` +
     `</svg>`;
   return { svg, pg };
 }
@@ -125,7 +125,8 @@ function buildStops(pg) {
     const [x, y, w, h] = b;
     const sc = Math.min(W / (w + 28), H / (h + 28));
     const k = Math.min(3, Math.max(1, Math.ceil(0.54 / sc - 0.05)));
-    if (k === 1 || w < h * 0.9) { out.push({ p: p.id, focus: b, move: 'glide' }); continue; }
+    // (a panel with no lettering is never split: it would only cut the art in half)
+    if (k === 1 || w < h * 0.9 || !pg.bls.some((q) => q.p === p.id)) { out.push({ p: p.id, focus: b, move: 'glide' }); continue; }
     const seg = w / k;
     const segs = [];
     for (let i = 0; i < k; i++) { const x0 = x + seg * i - (i ? seg * 0.08 : 0); segs.push([x0, x0 + seg * (i ? 1.08 : 1.04)]); }
@@ -146,7 +147,7 @@ function buildStops(pg) {
 function revealBalloons(L, upto) {
   const stops = L.stops, first = {}, last = {};
   stops.forEach((st2, i) => { if (!(st2.p in first)) first[st2.p] = i; last[st2.p] = i; });
-  let j = 0;
+  const fresh = [];
   L.svg.querySelectorAll('.bl').forEach((b) => {
     const p = b.dataset.p;
     let on;
@@ -154,13 +155,34 @@ function revealBalloons(L, upto) {
     else if (last[p] <= upto) on = true;
     else if (first[p] > upto) on = false;
     else {
+      // lettering a page drew by hand has no data-c: use its geometry
+      if (!b.dataset.c) { try { const bb = b.getBBox(); b.dataset.c = `${n(bb.x + bb.width / 2)},${n(bb.y + bb.height / 2)}`; } catch (e) { /* not laid out */ } }
       const c = b.dataset.c ? b.dataset.c.split(',').map(Number) : null;
       const own = stops.filter((st2) => st2.p === p);
       on = !c || !own.some((st2) => inBox(st2.focus, c)) || stops.slice(0, upto + 1).some((st2) => st2.p === p && inBox(st2.focus, c));
     }
-    if (on && !b.classList.contains('on')) { b.style.setProperty('--j', j++); b.classList.add('on'); }
+    if (on && !b.classList.contains('on')) fresh.push(b);
     if (!on) b.classList.remove('on');
   });
+  // pop in reading order; sound effects come at once, and dialogue never waits more than three beats
+  fresh.sort((a, b) => (parseFloat(a.style.getPropertyValue('--i')) || 0) - (parseFloat(b.style.getPropertyValue('--i')) || 0));
+  let j = 0;
+  for (const b of fresh) {
+    const sfxOnly = !!b.querySelector('.sfx') && !b.querySelector('ellipse, rect, path:not(.sfx)');
+    b.style.setProperty('--j', sfxOnly ? 0 : Math.min(3, j++));
+    b.classList.add('on');
+  }
+}
+
+// The frame for a stop: its focus, grown to take in whole any balloon first shown there.
+function stopFrame(L, s) {
+  let x0 = s.focus[0], y0 = s.focus[1], x1 = x0 + s.focus[2], y1 = y0 + s.focus[3];
+  for (const b of (L.pg && L.pg.bls) || []) {
+    if (b.p !== s.p || !inBox(s.focus, [b.box[0] + b.box[2] / 2, b.box[1] + b.box[3] / 2])) continue;
+    x0 = Math.min(x0, b.box[0] - 6); y0 = Math.min(y0, b.box[1] - 6);
+    x1 = Math.max(x1, b.box[0] + b.box[2] + 6); y1 = Math.max(y1, b.box[1] + b.box[3] + 6);
+  }
+  return [x0, y0, x1 - x0, y1 - y0];
 }
 
 function goStop(k, o = {}) {
@@ -170,11 +192,14 @@ function goStop(k, o = {}) {
   Reader.stop = k;
   Reader.full = false;
   const s = L.stops[k];
-  const vb = fitVB(s.focus);
+  s.frame = s.frame || stopFrame(L, s);
+  const vb = fitVB(s.frame);
   const from = o.from || Reader.vb;
-  animateVB(L.svg, from, vb, o.move ? MOVE_MS[o.move] : MOVE_MS[s.move] ?? 380, s.focus.map((v, i) => v + (i < 2 ? -6 : 12)));
+  const ms = reducedMotion() ? 0 : o.move ? MOVE_MS[o.move] : MOVE_MS[s.move] ?? 380;
+  animateVB(L.svg, from, vb, ms, s.frame.map((v, i) => v + (i < 2 ? -6 : 12)));
   revealBalloons(L, k);
-  if (s.lock || s.hold) Reader.lockUntil = Date.now() + Math.max(s.lock || 0, s.hold || 0);
+  // lock: the next tap waits this long from the start of the stop; hold: the camera rests this long after it arrives
+  if (s.lock || s.hold) Reader.lockUntil = Date.now() + Math.max(s.lock || 0, s.hold ? ms + s.hold : 0);
   if (!o.silent) L.ctx && L.ctx._panel(s.p);
   progress();
   debugInfo();
@@ -197,12 +222,14 @@ function makeCtx(i, el, svg, pg, o) {
   // In spread mode the right-hand page mounts while the reader is still on the left one, so its timed
   // beats wait until the reader gets there: the pointer reaches it, they touch it, or a reading-time
   // estimate for the left page runs out.
-  let reached = !(Reader.mode === 'spread' && el.classList.contains('right') && o.leftChars != null);
+  let reached = !(Reader.mode === 'spread' && el.classList.contains('right') && o.leftChars != null) ||
+    o.fromLeaf === i || !!(o.rerender && Reader.reachedMemo[i]);
   const waiting = [];
   const whenReached = (fn) => (reached ? fn() : waiting.push(fn));
   const reach = () => {
     if (reached || ctx.dead) return;
     reached = true;
+    Reader.reachedMemo[i] = true;
     waiting.splice(0).forEach((f) => { try { f(); } catch (e) { console.error(e); } });
   };
   const ctx = {
@@ -297,7 +324,14 @@ function makeCtx(i, el, svg, pg, o) {
   if (!reached) {
     const readMs = clamp(5000 + o.leftChars * 55, 7000, 25000);
     ctx.after(readMs, reach);
-    ctx.on('pointer', (p) => { if (p.leaf === el) reach(); });
+    // the pointer has to arrive on the page: after a click-turn it is often already resting there
+    let armed = false, firstPos = null;
+    ctx.on('pointer', (p) => {
+      if (p.tilt) return;
+      if (p.leaf !== el) { armed = true; return; }
+      if (!firstPos) firstPos = [p.x, p.y];
+      if (armed || Math.hypot(p.x - firstPos[0], p.y - firstPos[1]) > 90) reach();
+    });
     const down = () => reach();
     el.addEventListener('pointerdown', down);
     cleanups.push(() => el.removeEventListener('pointerdown', down));
@@ -630,10 +664,23 @@ function healBalloon(el) {
 
 // Taps find hotspots anywhere under the finger, not just the top-most element: lighting and
 // vignette layers are often drawn over a hidden Ollie.
-function hotspot(target, e) {
+function hotspot(target, e, dt = 1000) {
   const stack = e && document.elementsFromPoint ? document.elementsFromPoint(e.clientX, e.clientY) : [];
   if (!stack.includes(target)) stack.unshift(target);
+  // guided view: a tap on the dimmed surround is just a tap, and balloons not yet shown aren't there
+  const G = Reader.mode === 'guided' && !Reader.full ? Reader.leaves[0] : null;
+  const st0 = G && G.stops && G.stops[Reader.stop];
+  if (st0 && G.svg && e) {
+    const m = G.svg.getScreenCTM();
+    if (m) {
+      const q = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+      const f = st0.frame || st0.focus;
+      if (!inBox([f[0] - 10, f[1] - 10, f[2] + 20, f[3] + 20], [q.x, q.y])) return false;
+    }
+  }
+  const shown = (el) => { const b = G && el.closest && el.closest('.bl'); return !b || b.classList.contains('on'); };
   for (const el of stack) {
+    if (!shown(el)) continue;
     for (const L of Reader.leaves) {
       if (!L.ctx || !L.el.contains(el)) continue;
       for (const [sel, fn] of L.ctx._taps) {
@@ -643,9 +690,12 @@ function hotspot(target, e) {
     }
   }
   for (const el of stack) {
+    if (!shown(el)) continue;
     const hot = el.closest && el.closest('[data-hot]');
     if (!hot) continue;
     const k = hot.dataset.hot;
+    // a quick tap on a press-and-hold strip is a tap, not a hold
+    if (k === 'hold' && dt < 250) continue;
     // an unmoved press on a drag area: in guided view it may fill the screen, so it still turns the page
     if (k === 'drag') { if (Reader.mode === 'guided') continue; return true; }
     if (k === 'ollie') { foundOllie(hot); return true; }
@@ -701,7 +751,7 @@ function bindInput() {
     const dx = e.clientX - d.x, dy = e.clientY - d.y, dt = Date.now() - d.t;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4 && dt < 800) { dx < 0 ? next() : prev(); return; }
     if (Math.hypot(dx, dy) > 12 || dt > 650) return;
-    if (hotspot(d.target, e)) return;
+    if (hotspot(d.target, e, dt)) return;
     const zone = e.clientX / innerWidth;
     const act = () => {
       if (zone < 1 / 3) prev();
