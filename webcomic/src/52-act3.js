@@ -17,10 +17,12 @@ function pC_css() {
   @keyframes pC-pulse{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.1);opacity:1}}
   .pC-fadein{opacity:0;animation:pC-fade 2.6s ease-out forwards;animation-delay:var(--fd,1.5s)}
   @keyframes pC-fade{to{opacity:1}}
-  .pC-drain{animation:pC-drain 2s ease-in forwards;transform-box:view-box;transform-origin:500px 760px}
-  @keyframes pC-drain{0%{transform:scale(1.7);opacity:.9}100%{transform:scale(0);opacity:0}}
-  .pC-door{transition:transform 10s cubic-bezier(.45,0,.25,1)}
-  .pC-shut .pC-door{transform:translateX(var(--dx,0px))}
+  .pC-drain{animation:pC-drain 2.2s cubic-bezier(.55,0,.75,.6) forwards;transform-box:view-box;transform-origin:500px 760px}
+  @keyframes pC-drain{0%{transform:scale(1)}100%{transform:scale(0)}}
+  .pC-door{transform-box:view-box;transform:scaleX(var(--k0,1));transition:transform 10s cubic-bezier(.45,0,.25,1)}
+  .pC-doorshade{opacity:.35;transition:opacity 10s cubic-bezier(.45,0,.25,1)}
+  .pC-shut .pC-door{transform:scaleX(1)}
+  .pC-shut .pC-doorshade{opacity:0}
   .pC-wedge{transition:opacity 10s cubic-bezier(.45,0,.25,1)}
   .pC-shut .pC-wedge{opacity:.06}
   .pC-sign{opacity:0;transform:translate(-150px,0);transition:transform 1.8s cubic-bezier(.2,.8,.3,1),opacity .6s}
@@ -50,7 +52,7 @@ function pC_css() {
   .rm .pC-jit,.rm .pC-jit2,.rm .pC-bob,.rm .pC-blk,.rm .pC-pulse,.rm .pC-gull,.rm .pC-flap,.rm .pC-shim,.rm .pC-bloom,.rm .pC-sflick{animation:none!important}
   .rm .pC-fadein,.rm .pC-end.go{animation:none;opacity:1}
   .rm .pC-drain{display:none}
-  .rm .pC-door,.rm .pC-wedge,.rm .pC-sign,.rm .pC-q,.rm .pC-glowm,.rm .pC-endcard{transition:none}
+  .rm .pC-door,.rm .pC-doorshade,.rm .pC-wedge,.rm .pC-sign,.rm .pC-q,.rm .pC-glowm,.rm .pC-endcard{transition:none}
   </style>`;
 }
 
@@ -165,17 +167,17 @@ page(20, {
     const oc = {}, ol2 = {};
     b += fig('chloe', { x: B[0] + 340, y: B[1] + 450, s: 1.05, pose: 'recoil', face: 'scared', out: oc, light: 'side', so: 0.6 });
     b += pC_fakeLuke({ x: B[0] + 90, y: B[1] + 560, s: 1.45, pose: 'point', out: ol2, arms: { na: [84, 86] }, face: ['blank', 'flat', 'line'] });
-    b += pC_badge(oc.head[0], oc.head[1] - 66, 2);
+    b += pC_badge(oc.head[0] + 8, oc.head[1] - 72, 2);
     s += pg.panel('b', B, b, { desc: 'Luke points at Chloe. His mouth is closed; the word arrives twice — too early and too late at once.' });
-    s += `<g opacity=".4">${pg.say({ p: 'b', x: B[0] + 222, y: B[1] + 50, text: 'Two—', who: false, w: 90, tail: [ol2.head[0] + 40, ol2.head[1] - 20] })}</g>`;
-    s += pg.say({ p: 'b', x: B[0] + 262, y: B[1] + 82, text: 'Two—', who: 'LUKE', w: 90, tail: [ol2.head[0] + 44, ol2.head[1] - 6] });
+    s += `<g opacity=".4">${pg.say({ p: 'b', x: B[0] + 200, y: B[1] + 66, text: 'Two—', who: false, w: 90, tail: [ol2.mouth[0] + 4, ol2.mouth[1] - 4] })}</g>`;
+    s += pg.say({ p: 'b', x: B[0] + 228, y: B[1] + 100, text: 'Two—', who: 'LUKE', w: 90, tail: [ol2.mouth[0] + 6, ol2.mouth[1] + 2] });
 
     // 3: Chase — don't let him finish
     let c = R(Cc[0], Cc[1], Cc[2], Cc[3], '#10151C') + R(Cc[0], Cc[1], Cc[2], Cc[3], 'url(#htS)', 'opacity=".18"');
     const och = {};
     c += `<g transform="rotate(-8 ${Cc[0] + 150} ${Cc[1] + 200})">${fig('chase', { x: Cc[0] + 160, y: Cc[1] + 862, s: 2.1, view: 'front', face: 'shout', out: och, light: 'under', so: 0.5, pose: 'hold' })}</g>`;
     s += pg.panel('c', Cc, c, { desc: 'Chase, shouting.' });
-    s += pg.say({ p: 'c', x: Cc[0] + 150, y: Cc[1] + 64, type: 'shout', text: 'Don’t let him finish! Luka, cover your—', who: 'CHASE', w: 230, size: 22, tail: [Cc[0] + 170, Cc[1] + 150] });
+    s += pg.say({ p: 'c', x: Cc[0] + 172, y: Cc[1] + 76, type: 'shout', text: 'Don’t let him finish! Luka, cover your—', who: 'CHASE', w: 150, size: 22, tail: [Cc[0] + 170, Cc[1] + 170] });
 
     // 4: "Four." — three is already counted
     let d = storeInterior(D, { night: 0.72, vx: 0.62, vy: 0.4, bw: 0.36, bh: 0.5, lights: [0, 0, 1, 0, 0, 0], left: 'acc', right: 'display' });
@@ -212,7 +214,10 @@ page(20, {
       }
     });
     e += Pa(`M${Eb[0]} ${Eb[1] + 120}h${Eb[2]}M${Eb[0]} ${Eb[1] + 236}h${Eb[2]}`, 'none', st(C.screen, 1.5, 'opacity=".25"'));
-    s += pg.panel('e', Eb, e, { desc: 'Chase stutters out of existence: five overlapping copies of him, each fainter than the last, torn into shards like dropped video frames.', path: raggedRect(Eb[0], Eb[1], Eb[2], Eb[3], 'pC20shard', 5) });
+    s += pg.panel('e', Eb, e, {
+      desc: 'Chase stutters out of existence: five overlapping copies of him, each fainter than the last, torn into shards like dropped video frames.', path: raggedRect(Eb[0], Eb[1], Eb[2], Eb[3], 'pC20shard', 5),
+      guided: [{ focus: [Eb[0], Eb[1], 520, Eb[3]], move: 'cut' }, { focus: [Eb[0] + 400, Eb[1], 520, Eb[3]], move: 'glide' }],
+    });
     s += `<g opacity=".3">${pg.say({ p: 'e', x: Eb[0] + 150, y: Eb[1] + 72, text: 'Luka it’s — it’s —', who: false, w: 170, size: 25 })}</g>`;
     s += pg.say({ p: 'e', x: Eb[0] + 170, y: Eb[1] + 92, text: 'Luka it’s — it’s — it’s —', who: 'CHASE', w: 170, size: 25, tail: [cx0 - 40, Eb[1] + 110] });
     s += `<g opacity=".3">${pg.say({ p: 'e', x: Eb[0] + 760, y: Eb[1] + 210, text: 'lying about the — the —', who: false, w: 210, size: 25 })}</g>`;
@@ -240,15 +245,16 @@ page(20, {
 
     // 7: every speaker, in Chase's voice
     let g = R(G2[0], G2[1], G2[2], G2[3], '#06070A') + R(G2[0], G2[1], G2[2], 60, '#15181D');
-    const spk = [[G2[0] + 100, G2[1] + 42], [G2[0] + 360, G2[1] + 42]];
+    const spk = [[G2[0] + 92, G2[1] + 40], [G2[0] + 366, G2[1] + 40]];
     spk.forEach(([x, y]) => { g += Ci(x, y, 30, '#2A2D33', st(C.ink, 3)) + Ci(x, y, 22, 'url(#ht2)') + glow(x, y + 20, 60, 30, 'gS', 0.25); });
-    g += `<path d="M${G2[0] + 231} ${G2[1] + 140}L${G2[0] + 120} ${G2[1] + 406}L${G2[0] + 342} ${G2[1] + 406}Z" fill="url(#gCone)" opacity=".5"/>`;
-    g += E(G2[0] + 231, G2[1] + 380, 110, 16, '#20252C');
-    g += fig('luka', { x: G2[0] + 231, y: G2[1] + 396, s: 0.86, pose: 'slump', face: 'cry', light: 'top', so: 0.75, props: ['lanyard'], tilt: 18 });
+    g += R(G2[0] + 211, G2[1] + 52, 40, 9, '#C9D3DC', st(C.ink, 2));
+    g += `<path d="M${G2[0] + 216} ${G2[1] + 60}L${G2[0] + 246} ${G2[1] + 60}L${G2[0] + 350} ${G2[1] + 406}L${G2[0] + 100} ${G2[1] + 406}Z" fill="url(#gCone)" opacity=".5"/>`;
+    g += E(G2[0] + 228, G2[1] + 384, 104, 14, '#20252C');
+    g += fig('luka', { x: G2[0] + 215, y: G2[1] + 398, s: 0.78, pose: 'slump', face: 'cry', light: 'top', so: 0.75, props: ['lanyard'], tilt: 18 });
     g += ollie({ x: G2[0] + 420, y: G2[1] + 360, s: 0.3, dark: true, turn: -1 });
     s += pg.panel('g', G2, g, { desc: 'Every ceiling speaker, in Chase’s voice, chopped like a sample. Below them, Luka on his knees. No words.' });
-    s += pg.say({ p: 'g', x: G2[0] + 120, y: G2[1] + 140, type: 'elec', text: 'THANK — THANK YOU FOR —', who: 'SPEAKERS (CHASE’S VOICE)', w: 180, size: 24, tail: spk[0] });
-    s += pg.say({ p: 'g', x: G2[0] + 352, y: G2[1] + 152, type: 'elec', text: 'FOR HOL — HOLDING.', who: 'SPEAKERS (CHASE’S VOICE)', w: 150, size: 24, tail: spk[1] });
+    s += pg.say({ p: 'g', x: spk[0][0], y: G2[1] + 140, type: 'elec', text: 'THANK —\nTHANK YOU\nFOR —', who: 'SPEAKERS (CHASE’S VOICE)', w: 150, size: 24, tail: [spk[0][0], spk[0][1] + 24] });
+    s += pg.say({ p: 'g', x: spk[1][0] - 6, y: G2[1] + 130, type: 'elec', text: 'FOR HOL —\nHOLDING.', who: 'SPEAKERS (CHASE’S VOICE)', w: 140, size: 24, tail: [spk[1][0], spk[1][1] + 24] });
     return s;
   },
   mount(ctx) {
@@ -289,6 +295,22 @@ function pC_rueScreen(x, y, w, h, o = {}) {
   return s;
 }
 
+// Size of an electronic balloon exactly as pg.say draws it, so connectors and guided stops can be placed on it.
+function pC_elecBox(x, y, text, w, size) {
+  const lines = wrapText(String(text).toUpperCase(), w, size, FONTS.speech, 0);
+  const bw = Math.max(...lines.map((l) => textW(l, size, FONTS.speech, 0))) + 44, bh = lines.length * size * 1.06 + 28;
+  return [x - bw / 2, y - bh / 2, bw, bh];
+}
+
+// A balloon connector (one speaker, two balloons): a white band from P to Q whose inked sides run edge to edge.
+// Drawn over both balloons so the joins are seamless; it pops in with the second balloon.
+function pC_link(pg, p, P, Q, wid = 22) {
+  const dx = Q[0] - P[0], dy = Q[1] - P[1], L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, px = -uy * wid / 2, py = ux * wid / 2;
+  const band = [[P[0] - ux * 7 + px, P[1] - uy * 7 + py], [Q[0] + ux * 7 + px, Q[1] + uy * 7 + py], [Q[0] + ux * 7 - px, Q[1] + uy * 7 - py], [P[0] - ux * 7 - px, P[1] - uy * 7 - py]];
+  const sides = `M${n(P[0] + px)} ${n(P[1] + py)}L${n(Q[0] + px)} ${n(Q[1] + py)}M${n(P[0] - px)} ${n(P[1] - py)}L${n(Q[0] - px)} ${n(Q[1] - py)}`;
+  return `<g class="bl" data-p="${p}" style="--i:${pg.bal - 1}">${Po(band, '#FFFFFF')}${Pa(sides, 'none', st(C.ink, 6))}</g>`;
+}
+
 page(21, {
   title: 'Town Hall', side: 'right', gutter: 'black', bleed: 'hold', status: 'sos',
   alt: 'At 2:00 AM the promo video wall switches itself on: a message from Rue, the CEO, nine of him, each a frame out of sync. It was recorded in 1987, yet he answers. He knows what Luka said about Bon Jovi. He knew about Jarrad. Coverage isn’t free, he explains: somebody has to pay for the hold. Close the store, count to seven, lock the door. And Chloe? Chloe’s not a customer. Chloe’s staff.',
@@ -298,7 +320,7 @@ page(21, {
     const Eb = [40, 904, 920, 260], F = [40, 1182, 920, 278];
     let s = pC_css();
 
-    // 1: the promo wall switches on — a town-hall card in Optus yellow
+    // 1: the promo wall switches on — a town-hall card in Optus yellow; Luka and Chloe, backs to us, in its light
     let a = R(A[0], A[1], A[2], A[3], '#07080B');
     const W0 = [A[0] + 220, A[1] + 16, 540, 186];
     a += glow(W0[0] + 270, W0[1] + 100, 420, 200, 'gY', 0.35);
@@ -309,32 +331,48 @@ page(21, {
     a += `<g transform="translate(${W0[0] + 74} ${W0[1] + 176}) scale(.5)">${pC_miniOllie()}</g>`;
     for (let i = 1; i < 3; i++) a += Ln(W0[0] + (W0[2] * i) / 3, W0[1], W0[0] + (W0[2] * i) / 3, W0[1] + W0[3], '#111215', 4) + Ln(W0[0], W0[1] + (W0[3] * i) / 3, W0[0] + W0[2], W0[1] + (W0[3] * i) / 3, '#111215', 4);
     a += R(W0[0] - 7, W0[1] - 7, W0[2] + 14, W0[3] + 14, 'none', st('#111215', 10)) + R(W0[0], W0[1], W0[2], W0[3], 'url(#scan)', 'opacity=".15"');
-    a += fig('luka', { x: A[0] + 150, y: A[1] + 470, s: 1.0, view: 'back', sil: true, rim: 'yellow', rimDx: 4 });
-    a += fig('chloe', { x: A[0] + 830, y: A[1] + 470, s: 0.95, view: 'back', sil: true, rim: 'yellow', rimDx: -4 });
-    a += ollie({ x: A[0] + 62, y: A[1] + 216, s: 0.36, dark: true, turn: 1 });
-    s += pg.panel('a', A, a, { desc: 'The promo video wall, a three-by-three grid of screens, switches on by itself: a corporate town-hall card in Optus yellow, Ollie waving beside the title. A MESSAGE FROM RUE. Luka and Chloe, silhouetted, in front of it.' });
+    a += ollie({ x: A[0] + 28, y: A[1] + 214, s: 0.3, dark: true, turn: 1 });
+    a += fig('luka', { x: A[0] + 118, y: A[1] + 590, s: 1.4, view: 'back', sil: true, rim: 'yellow', rimDx: 5 });
+    a += fig('chloe', { x: A[0] + 836, y: A[1] + 526, s: 1.3, view: 'back', sil: true, rim: 'yellow', rimDx: -5 });
+    s += pg.panel('a', A, a, {
+      desc: 'The promo video wall, a three-by-three grid of screens, switches on by itself: a corporate town-hall card in Optus yellow, Ollie waving beside the title. A MESSAGE FROM RUE. Luka and Chloe, silhouetted, in front of it.',
+      guided: [{ focus: [A[0], A[1], 330, A[3]] }, { focus: [W0[0] - 10, A[1], W0[2] + 20, A[3]] }],
+    });
     s += pg.cap({ p: 'a', x: 60, y: 58, text: '2:00 AM.', w: 150 });
 
     // 2: nine Rues, each a frame behind the last. When he says "Luka", eight turn to Luka — and one turns to you.
     let b = R(B[0], B[1], B[2], B[3], '#06070A');
     const gw = 170, gh = 98, gx0 = B[0] + 26, gy0 = B[1] + 18;
+    let nine = null;
     for (let k = 0; k < 9; k++) {
       const i = k % 3, j = Math.floor(k / 3);
       const x = gx0 + i * (gw + 14), y = gy0 + j * (gh + 14);
       let turned;
       if (k === 8) {
+        // the camera on this screen has pushed in: he's bigger, and he's looking straight out at you
         const out = {};
-        turned = pC_rueFig(x, y, gw, gh, { face: ['blank', 'flat', 'smile'], out });
-        const sc = gh / 150;
+        turned = pC_rueFig(x, y, gw, gh, { face: ['blank', 'flat', 'smile'], out, frame: 92, fx: 0.4 });
+        const sc = gh / 92;
         turned += `<g class="pC-rpup">${Ci(out.head[0] - 9 * sc, out.head[1], 2.4 * sc, C.ink)}${Ci(out.head[0] + 9 * sc, out.head[1], 2.4 * sc, C.ink)}</g>`;
+        nine = [x, y];
       } else turned = pC_rueFig(x, y, gw, gh, { view: 'side', flip: true, face: 'smile', fx: 0.48 });
       const front = pC_rueFig(x, y, gw, gh, { face: 'smile' });
-      b += pC_rueScreen(x, y, gw, gh, { figs: swap(front, turned, `pC-rue pC-rue${k}`), delay: k * 0.08, seed: `pC21b${k}`, lower: k === 4 });
+      b += pC_rueScreen(x, y, gw, gh, { figs: swap(front, turned, `pC-rue pC-rue${k}`), delay: k * 0.08, seed: `pC21b${k}`, lower: k === 4, rec: true });
     }
-    b += Ln(B[0] + 590, B[1], B[0] + 590, B[1] + B[3], C.ink, 0);
-    s += pg.panel('b', B, b, { desc: 'Rue on all nine screens: suit, briefcase on the desk beside him. Each Rue runs a frame behind the last.' });
-    s += pg.say({ p: 'b', x: B[0] + 770, y: B[1] + 110, type: 'elec', text: 'Hello, team. If you’re seeing this, your store has been selected for a Service Event. First of all — thank you.', who: 'RUE', w: 280, size: 23, tail: [B[0] + 560, B[1] + 90] });
-    s += pg.say({ p: 'b', x: B[0] + 760, y: B[1] + 268, type: 'elec', text: 'And Luka? You’re right about Bon Jovi.', who: 'RUE', w: 230, size: 25, tail: [B[0] + 560, B[1] + 250] });
+    const grid = [B[0], B[1], 590, B[3]];
+    const t1 = 'Hello, team. If you’re seeing this, your store has been selected for a Service Event. First of all — thank you.';
+    const t2 = 'And Luka? You’re right about Bon Jovi.';
+    const b1 = pC_elecBox(B[0] + 748, B[1] + 92, t1, 280, 23), b2 = pC_elecBox(B[0] + 760, B[1] + 262, t2, 230, 25);
+    s += pg.panel('b', B, b, {
+      desc: 'Rue on all nine screens: suit, briefcase on the desk beside him. Each Rue runs a frame behind the last.',
+      guided: [{ focus: grid }, { focus: [b1[0] - 40, b1[1] - 6, b1[2] + 50, b1[3] + 12] }],
+    });
+    s += pg.say({ p: 'b', x: B[0] + 748, y: B[1] + 92, type: 'elec', text: t1, who: 'RUE', w: 280, size: 23, tail: [B[0] + 560, B[1] + 70] });
+    // guided view: read "And Luka?", cut back to the wall as eight of them turn, then creep in on the ninth
+    pg.stop('bL', [b2[0] - 50, b2[1] - 10, b2[2] + 60, b2[3] + 20]);
+    pg.stop('bT', grid, { move: 'cut' });
+    pg.stop('b9', [nine[0] - 14, nine[1] - 10, gw + 28, gh + 20], { move: 'creep' });
+    s += pg.say({ p: 'bL', x: B[0] + 760, y: B[1] + 262, type: 'elec', text: t2, who: 'RUE', w: 230, size: 25, tail: [B[0] + 560, B[1] + 250] });
 
     // 3: Luka goes cold
     let c = R(Cc[0], Cc[1], Cc[2], Cc[3], '#0B0F14') + glow(Cc[0] + 300, Cc[1] + 80, 200, 200, 'gY', 0.3);
@@ -350,36 +388,52 @@ page(21, {
     s += pg.panel('d', D, d, { desc: 'One screen, close. Rue, warm, recorded — yet answering. In the corner of every screen: RECORDED 14·03·1987.' });
     s += pg.say({ p: 'd', x: D[0] + 440, y: D[1] + 124, type: 'elec', text: 'Jarrad was a wonderful closer, Luka. So are you.', who: 'RUE', w: 170, size: 23, tail: [D[0] + 310, D[1] + 110] });
 
-    // 5: coverage isn't free
+    // 5: coverage isn't free — one speaker, three balloons, joined so they read in order
     let e = R(Eb[0], Eb[1], Eb[2], Eb[3], '#06070A');
     e += pC_rueScreen(Eb[0] + 22, Eb[1] + 40, 250, 156, { seed: 'pC21e', face: 'calm', blocks: 3, rec: true });
-    s += pg.panel('e', Eb, e, { desc: 'Rue, explaining.' });
-    s += pg.say({ p: 'e', x: Eb[0] + 470, y: Eb[1] + 130, type: 'elec', text: 'Coverage isn’t free. Every bar, on every phone, on this whole peninsula, is held up by something. Somebody has to pay for the hold.', who: 'RUE', w: 300, size: 22, tail: [Eb[0] + 280, Eb[1] + 110] });
-    s += pg.say({ p: 'e', x: Eb[0] + 772, y: Eb[1] + 70, type: 'elec', text: 'Your Zane had it right, by the way. S.O.S. Save our souls.', who: 'RUE', w: 220, size: 22 });
-    s += pg.say({ p: 'e', x: Eb[0] + 790, y: Eb[1] + 196, type: 'elec', text: 'That’s the job, Luka. We save every single one.', who: 'RUE', w: 210, size: 22 });
+    const te1 = 'Coverage isn’t free. Every bar, on every phone, on this whole peninsula, is held up by something. Somebody has to pay for the hold.';
+    const te2 = 'Your Zane had it right, by the way. S.O.S. Save our souls.';
+    const te3 = 'That’s the job, Luka. We save every single one.';
+    const e1 = pC_elecBox(Eb[0] + 428, Eb[1] + 132, te1, 222, 22), e2 = pC_elecBox(Eb[0] + 774, Eb[1] + 72, te2, 220, 22), e3 = pC_elecBox(Eb[0] + 784, Eb[1] + 196, te3, 210, 22);
+    s += pg.panel('e', Eb, e, {
+      desc: 'Rue, explaining.',
+      guided: [{ focus: [e1[0] - 120, Eb[1], e1[2] + 134, Eb[3]] }, { focus: [e2[0] - 16, Eb[1], Eb[0] + Eb[2] - e2[0] + 16, Eb[3]] }],
+    });
+    s += pg.say({ p: 'e', x: Eb[0] + 428, y: Eb[1] + 132, type: 'elec', text: te1, who: 'RUE', w: 222, size: 22, tail: [Eb[0] + 280, Eb[1] + 110] });
+    s += pg.say({ p: 'e', x: Eb[0] + 774, y: Eb[1] + 72, type: 'elec', text: te2, who: 'RUE', w: 220, size: 22 });
+    const ly = clamp(e2[1] + e2[3] * 0.62, e1[1] + 16, e1[1] + e1[3] - 16);
+    s += pC_link(pg, 'e', [e1[0] + e1[2], ly], [e2[0], ly]);
+    s += pg.say({ p: 'e', x: Eb[0] + 784, y: Eb[1] + 196, type: 'elec', text: te3, who: 'RUE', w: 210, size: 22 });
+    s += pC_link(pg, 'e', [Eb[0] + 790, e2[1] + e2[3]], [Eb[0] + 790, e3[1]]);
 
     // 6: close the store. And Chloe? — Chloe's staff.
     let f = R(F[0], F[1], F[2], F[3], '#06070A');
-    f += pC_rueScreen(F[0] + 22, F[1] + 34, 230, 144, { seed: 'pC21f', face: 'smile', blocks: 3 });
+    f += pC_rueScreen(F[0] + 22, F[1] + 26, 214, 134, { seed: 'pC21f', face: 'smile', blocks: 3 });
     f += glow(F[0] + 830, F[1] + 130, 200, 200, 'gY', 0.22);
     const okf = {};
     f += fig('luka', { x: F[0] + 860, y: F[1] + 860, s: 2.0, view: 'side', flip: true, face: 'worried', out: okf, light: 'front', so: 0.75, props: ['lanyard'] });
-    s += pg.panel('f', F, f, { desc: 'Rue, smiling. Luka, at the edge of the light.' });
-    s += pg.say({ p: 'f', x: F[0] + 470, y: F[1] + 84, type: 'elec', text: 'Close the store. Count to seven. Lock the door. By sunrise, Redcliffe has coverage — and you’ll never have another outage as long as you live.', who: 'RUE', w: 400, size: 22, tail: [F[0] + 256, F[1] + 80] });
-    s += pg.say({ p: 'f', x: F[0] + 760, y: F[1] + 70, text: 'And Chloe?', who: 'LUKA', w: 100, size: 24, tail: [okf.head[0] - 30, okf.head[1] - 10] });
-    s += pg.say({ p: 'f', x: F[0] + 520, y: F[1] + 222, type: 'elec', text: 'Chloe’s not a customer, Luka. Chloe’s staff.', who: 'RUE', w: 330, size: 25, tail: [F[0] + 256, F[1] + 150] });
+    const tf1 = 'Close the store. Count to seven. Lock the door. By sunrise, Redcliffe has coverage — and you’ll never have another outage as long as you live.';
+    const tf3 = 'Chloe’s not a customer, Luka. Chloe’s staff.';
+    const f1 = pC_elecBox(F[0] + 418, F[1] + 102, tf1, 290, 22), f3 = pC_elecBox(F[0] + 236, F[1] + 236, tf3, 330, 25);
+    s += pg.panel('f', F, f, {
+      desc: 'Rue, smiling. Luka, at the edge of the light.',
+      guided: [{ focus: [f1[0] - 110, F[1], f1[2] + 124, f1[1] + f1[3] + 8 - F[1]] }, { focus: [F[0] + 560, F[1], 360, F[3]] }, { focus: [f3[0] - 14, f3[1] - 14, f3[2] + 28, f3[3] + 20] }],
+    });
+    s += pg.say({ p: 'f', x: F[0] + 418, y: F[1] + 102, type: 'elec', text: tf1, who: 'RUE', w: 290, size: 22, tail: [F[0] + 240, F[1] + 80] });
+    s += pg.say({ p: 'f', x: F[0] + 742, y: F[1] + 84, text: 'And Chloe?', who: 'LUKA', w: 100, size: 25, tail: [okf.head[0] - 30, okf.head[1] - 14] });
+    s += pg.say({ p: 'f', x: F[0] + 236, y: F[1] + 236, type: 'elec', text: tf3, who: 'RUE', w: 330, size: 25, tail: [F[0] + 130, F[1] + 162] });
     return s;
   },
   mount(ctx) {
     ctx.onPanel('a', () => { ctx.sfx('static', { v: 0.4 }); [72, 76, 79, 84].forEach((m, i) => ctx.after(500 + i * 220, () => ctx.sfx('note', { m }))); }, 300);
-    // "And Luka?" — eight Rues turn to Luka, one frame apart; the ninth turns to the reader
+    // "And Luka?" — eight Rues turn to Luka, one frame apart; the ninth turns to the reader and keeps watching
     const turn = () => {
       for (let k = 0; k < 9; k++) ctx.after(k * 85, () => ctx.qa(`.pC-rue${k}`).forEach((x) => x.classList.add('on')));
       const pup = ctx.q('.pC-rpup');
       if (!pup) return;
-      ctx.onPointer((nx, ny) => { pup.setAttribute('transform', `translate(${n(clamp(nx, -1, 1) * 2.2)} ${n(clamp(ny, -1, 1) * 1.4)})`); });
+      ctx.onPointer((nx, ny) => { pup.setAttribute('transform', `translate(${n(clamp(nx, -1, 1) * 2.4)} ${n(clamp(ny, -1, 1) * 1.8)})`); });
     };
-    ctx.onPanel('b', () => ctx.after(ctx.mode === 'guided' ? 1400 : 0, turn), 2600);
+    ctx.onPanel('bT', turn, 2600);
   },
 });
 
@@ -394,12 +448,12 @@ function pC_miniOllie() {
 
 /* ---------- Page 22 — I'll Lock Up ---------- */
 
-// A stockroom door seen from the shop floor. o: {sign}
-function pC_stockDoor(x, y, w, h) {
+// A stockroom door seen from the shop floor, handle on the side nearest the hinge-free edge (o.handle: 'left' | 'right').
+function pC_stockDoor(x, y, w, h, o = {}) {
   let s = R(x - 14, y - 14, w + 28, h + 14, '#2A2E35', st(C.ink, 3));
   s += R(x, y, w, h, '#4A5058', st(C.ink, 3)) + R(x + w * 0.3, y + h * 0.12, w * 0.4, h * 0.16, '#141820', st(C.ink, 2));
   s += R(x + w * 0.18, y + h * 0.34, w * 0.64, h * 0.08, '#F2EFE6', st(C.ink, 1.5)) + Tx(x + w / 2, y + h * 0.395, 'STOCKROOM', h * 0.05, C.ink, 'text-anchor="middle" letter-spacing="1"', FONTS.ui);
-  s += R(x + w * 0.8, y + h * 0.52, w * 0.12, h * 0.03, '#B9BCC2', st(C.ink, 1.5));
+  s += R(x + w * (o.handle === 'left' ? 0.06 : 0.8), y + h * 0.52, w * 0.14, h * 0.035, '#B9BCC2', st(C.ink, 1.5));
   return s;
 }
 
@@ -411,36 +465,43 @@ page(22, {
     const A = [40, 40, 560, 420], B = [618, 40, 342, 420], Cc = [40, 478, 920, 300], D = [40, 796, 560, 340], Eb = [618, 796, 342, 340], F = [40, 1154, 920, 306];
     let s = pC_css();
 
-    // 1: the lanyard goes over Chloe's head
+    // 1: the lanyard goes over Chloe's head — held open in both his hands, the 2IC card and keys swinging below
     let a = R(A[0], A[1], A[2], A[3], '#0D1117') + glow(A[0] + 520, A[1] + 160, 260, 260, 'gY', 0.22) + R(A[0], A[1] + 360, A[2], 60, '#141820');
     const ol = {}, oc = {};
-    a += fig('chloe', { x: A[0] + 360, y: A[1] + 640, s: 1.18, flip: true, face: 'sad', out: oc, light: 'front', so: 0.6, tilt: 10, pose: 'still' });
-    a += fig('luka', { x: A[0] + 170, y: A[1] + 620, s: 1.2, face: 'calm', out: ol, props: [], light: 'side', so: 0.6, arms: { na: { to: [108, -352], bend: -1 }, fa: { to: [116, -344], bend: -1 } } });
-    // the lanyard: a yellow loop lowered over her head, the 2IC card and keys swinging under his hands
-    const hx = oc.head[0] + 4, hy = oc.head[1] - 44;
-    a += E(hx, hy, 46, 13, 'none', st(C.ink, 8)) + E(hx, hy, 46, 13, 'none', st(C.y, 5));
-    a += Pa(`M${n(ol.nh[0])} ${n(ol.nh[1])}Q${n(ol.nh[0] + 30)} ${n(ol.nh[1] + 70)} ${n(ol.nh[0] + 6)} ${n(ol.nh[1] + 96)}`, 'none', st(C.ink, 7)) + Pa(`M${n(ol.nh[0])} ${n(ol.nh[1])}Q${n(ol.nh[0] + 30)} ${n(ol.nh[1] + 70)} ${n(ol.nh[0] + 6)} ${n(ol.nh[1] + 96)}`, 'none', st(C.y, 4.5));
-    a += `<g transform="translate(${n(ol.nh[0] + 6)} ${n(ol.nh[1] + 96)}) rotate(8)">${R(-16, 0, 32, 42, '#FFFFFF', st(C.ink, 2))}${R(-16, 0, 32, 10, C.y)}${Tx(0, 32, '2IC', 13, C.ink, 'text-anchor="middle"', FONTS.ui)}${Ci(0, 52, 6, 'none', st('#9AA0A6', 3))}${Pa('M0 58l-5 16l7 3M4 58l10 13', 'none', st('#9AA0A6', 3.5))}</g>`;
+    const chloe1 = fig('chloe', { x: A[0] + 372, y: A[1] + 640, s: 1.18, flip: true, face: ['dot', 'worried', 'frown'], look: [1, -1], out: oc, light: 'front', so: 0.6, pose: 'still' });
+    const lx = oc.head[0], lyy = oc.head[1] - 30, lrx = 44;
+    const L0 = [lx - lrx, lyy], L1 = [lx + lrx, lyy - 2], card = [lx - 6, lyy + 92];
+    const lk = A[0] + 262, lkY = A[1] + 628, lks = 1.2;
+    const loc = (p) => [(p[0] - lk) / lks, (p[1] - lkY) / lks];
+    const strap = (d) => Pa(d, 'none', st(C.ink, 8)) + Pa(d, 'none', st(C.y, 4.6));
+    a += strap(`M${n(L0[0])} ${n(L0[1])}A${lrx} 11 0 0 1 ${n(L1[0])} ${n(L1[1])}`);
+    a += fig('luka', { x: lk, y: lkY, s: lks, face: ['dot', 'worried', 'line'], look: [1, 0.6], out: ol, props: [], light: 'side', so: 0.6, arms: { na: { to: loc(L0), bend: -1 }, fa: { to: loc(L1), bend: -1 } } });
+    a += chloe1;
+    a += strap(`M${n(L0[0])} ${n(L0[1])}Q${n(L0[0] + 8)} ${n(card[1] - 30)} ${n(card[0] - 4)} ${n(card[1])}M${n(L1[0])} ${n(L1[1])}Q${n(L1[0] - 12)} ${n(card[1] - 30)} ${n(card[0] + 4)} ${n(card[1])}`);
+    a += `<g transform="translate(${n(card[0])} ${n(card[1])}) rotate(-7)">${R(-17, 0, 34, 44, '#FFFFFF', st(C.ink, 2))}${R(-17, 0, 34, 10, C.y)}${Tx(0, 33, '2IC', 13, C.ink, 'text-anchor="middle"', FONTS.ui)}${Ci(0, 54, 6, 'none', st('#9AA0A6', 3))}${Pa('M0 60l-5 16l7 3M4 60l10 13', 'none', st('#9AA0A6', 3.5))}</g>`;
     s += pg.panel('a', A, a, { desc: 'Luka lifts his lanyard — keys, the 2IC card — over his own head and puts it over Chloe’s.' });
-    s += pg.say({ p: 'a', x: A[0] + 290, y: A[1] + 78, text: 'Roller door. When it goes up, you run. Don’t look back. Don’t count anything. Not steps, not cars, nothing.', who: 'LUKA', w: 400, size: 24, tail: [ol.head[0] + 30, ol.head[1] - 34] });
+    s += pg.say({ p: 'a', x: A[0] + 290, y: A[1] + 78, text: 'Roller door. When it goes up, you run. Don’t look back. Don’t count anything. Not steps, not cars, nothing.', who: 'LUKA', w: 400, size: 24, tail: [ol.mouth[0] - 6, ol.mouth[1] - 22] });
 
     // 2: what are you doing?
     let b = R(B[0], B[1], B[2], B[3], '#0D1117') + glow(B[0] + 170, B[1] + 260, 200, 200, 'gY', 0.18);
     const oc2 = {}, ol2 = {};
-    b += fig('luka', { x: B[0] + 300, y: B[1] + 830, s: 1.9, flip: true, face: 'calm', out: ol2, props: [], light: 'side', so: 0.7 });
+    b += fig('luka', { x: B[0] + 280, y: B[1] + 870, s: 1.9, flip: true, face: ['lids', 'worried', 'line'], out: ol2, props: [], light: 'side', so: 0.7 });
     b += fig('chloe', { x: B[0] + 110, y: B[1] + 790, s: 1.75, view: 'front', face: 'worried', out: oc2, props: ['lanyard'], light: 'side', so: 0.5 });
     s += pg.panel('b', B, b, { desc: 'Chloe, the lanyard round her neck now. Luka, calm.' });
-    s += pg.say({ p: 'b', x: B[0] + 110, y: B[1] + 60, text: 'What are you doing?', who: 'CHLOE', w: 140, size: 24, tail: [oc2.head[0], oc2.head[1] - 50] });
-    s += pg.say({ p: 'b', x: B[0] + 236, y: B[1] + 160, text: 'What I should’ve done a year ago.', who: 'LUKA', w: 150, size: 23, tail: [ol2.head[0], ol2.head[1] - 50], rot: 0.07 });
+    s += pg.say({ p: 'b', x: B[0] + 92, y: B[1] + 58, text: 'What are you doing?', who: 'CHLOE', w: 140, size: 24, tail: [oc2.mouth[0], oc2.mouth[1] - 30] });
+    s += pg.say({ p: 'b', x: B[0] + 240, y: B[1] + 132, text: 'What I should’ve done a year ago.', who: 'LUKA', w: 150, size: 23, tail: [ol2.mouth[0] + 6, ol2.mouth[1] - 24], rot: 0.07 });
 
-    // 3: at the stockroom door, a small forced smile
+    // 3: at the stockroom door, hand on it, a small forced smile back at her
     let c = R(Cc[0], Cc[1], Cc[2], Cc[3], '#11151B') + R(Cc[0], Cc[1] + 230, Cc[2], 70, '#181C22');
-    c += pC_stockDoor(Cc[0] + 640, Cc[1] + 30, 150, 210);
+    c += pC_stockDoor(Cc[0] + 640, Cc[1] + 30, 150, 210, { handle: 'left' });
     c += glow(Cc[0] + 715, Cc[1] + 236, 120, 18, 'gY', 0.5);
-    const ok3 = {};
-    c += fig('luka', { x: Cc[0] + 560, y: Cc[1] + 290, s: 0.82, view: 'front', face: 'forced', out: ok3, props: [], farms: { r: { to: [96, -168], bend: 1 } }, light: 'side', so: 0.55 });
+    const ok3 = {}, hx3 = Cc[0] + 640 + 150 * 0.13, hy3 = Cc[1] + 30 + 210 * 0.535, lx3 = Cc[0] + 575, ly3 = Cc[1] + 290;
+    c += fig('luka', { x: lx3, y: ly3, s: 0.82, view: 'front', face: 'forced', out: ok3, props: [], farms: { r: { to: [(hx3 - lx3) / 0.82, (hy3 - ly3) / 0.82], bend: 1 } }, light: 'side', so: 0.55 });
     c += fig('chloe', { x: Cc[0] + 180, y: Cc[1] + 700, s: 1.75, view: 'back', sil: true, rim: 'yellow', rimDx: 5 });
-    s += pg.panel('c', Cc, c, { desc: 'Luka at the stockroom door, hand on it. He looks back at Chloe — a small, forced smile.' });
+    s += pg.panel('c', Cc, c, {
+      desc: 'Luka at the stockroom door, hand on it. He looks back at Chloe — a small, forced smile.',
+      guided: [{ focus: Cc }, { focus: [Cc[0] + 400, Cc[1], 520, Cc[3]], move: 'creep' }],
+    });
     s += pg.cap({ p: 'c', x: Cc[0] + Cc[2] - 18, y: Cc[1] + 18, right: true, text: '2:40 AM.', w: 160 });
 
     // 4: inside, the impossible aisle again — far off, Jarrad turns
@@ -454,26 +515,31 @@ page(22, {
     // 5: close on Luka, calm, over his shoulder
     let e = R(Eb[0], Eb[1], Eb[2], Eb[3], '#0A0B0E') + glow(Eb[0] + 300, Eb[1] + 170, 220, 260, 'gY', 0.45);
     const ok5 = {};
-    e += fig('luka', { x: Eb[0] + 170, y: Eb[1] + 870, s: 2.05, flip: true, face: 'calm', out: ok5, props: [], light: 'side', so: 0.78 });
+    e += fig('luka', { x: Eb[0] + 170, y: Eb[1] + 870, s: 2.05, flip: true, face: 'forced', out: ok5, props: [], light: 'side', so: 0.78 });
     s += pg.panel('e', Eb, e, { desc: 'Close on Luka, calm, looking back over his shoulder at Chloe.' });
     s += pg.say({ p: 'e', x: Eb[0] + 196, y: Eb[1] + 62, text: 'You go, mate. I’ll lock up.', who: 'LUKA', w: 170, size: 26, tail: [ok5.head[0] - 40, ok5.head[1] - 30] });
 
     // 6: the door closing; through the narrowing gap, the two of them together. BEEP. 05.
-    const dx0 = F[0] + 360, dw = 260, gap = 120;
+    const dx0 = F[0] + 330, dw = 240, gap = 110, dy0 = F[1] + 40, dh = 218;
     let f = R(F[0], F[1], F[2], F[3], '#0B0D11') + R(F[0], F[1] + 250, F[2], 60, '#121519');
     f += R(dx0 - 22, F[1] + 26, dw + 44, 232, '#2A2E35', st(C.ink, 3));
-    // what the gap shows
-    f += R(dx0, F[1] + 40, dw, 218, '#2A2208') + glow(dx0 + 60, F[1] + 150, 160, 140, 'gY', 0.9);
-    f += fig('luka', { x: dx0 + 44, y: F[1] + 252, s: 0.5, view: 'side', sil: true });
-    f += fig('jarrad', { x: dx0 + 80, y: F[1] + 252, s: 0.68, flip: true, sil: true, pose: 'reach', tilt: 14 });
-    f += `<g class="pC-wedge">${Po([[dx0, F[1] + 258], [dx0 + gap, F[1] + 258], [dx0 + gap + 260, F[1] + 306], [dx0 - 60, F[1] + 306]], C.y, 'opacity=".28"')}</g>`;
-    // the door leaf, hinged on the right, slides shut as you linger
-    f += `<g class="pC-door" style="--dx:${-gap + 8}px">${R(dx0 + gap, F[1] + 40, dw - gap + 6, 218, '#4A5058', st(C.ink, 3))}${R(dx0 + gap + 14, F[1] + 120, 10, 30, '#B9BCC2', st(C.ink, 1.5))}${R(dx0 + gap + 40, F[1] + 66, dw - gap - 70, 34, '#F2EFE6', st(C.ink, 1.5))}${Tx(dx0 + gap + 40 + (dw - gap - 70) / 2, F[1] + 89, 'STOCK', 18, C.ink, 'text-anchor="middle"', FONTS.ui)}</g>`;
-    f += R(dx0 + dw + 6, F[1] + 26, F[2], 240, '#0B0D11');
-    f += queueTV(F[0] + 700, F[1] + 64, 170, 96, { num: '05', glow: true });
+    // what the opening shows, clipped to the door frame
+    const gcl = uid('pCgap');
+    let gapArt = R(dx0, dy0, dw, dh, '#2A2208') + glow(dx0 + 56, dy0 + 110, 160, 140, 'gY', 0.9);
+    gapArt += fig('luka', { x: dx0 + 40, y: dy0 + 212, s: 0.5, view: 'side', sil: true });
+    gapArt += fig('jarrad', { x: dx0 + 78, y: dy0 + 212, s: 0.68, flip: true, sil: true, pose: 'reach', tilt: 14 });
+    f += `<clipPath id="${gcl}"><rect x="${dx0}" y="${dy0}" width="${dw}" height="${dh}"/></clipPath><g clip-path="url(#${gcl})">${gapArt}</g>`;
+    f += `<g class="pC-wedge">${Po([[dx0, dy0 + dh], [dx0 + gap, dy0 + dh], [dx0 + gap + 240, F[1] + 306], [dx0 - 60, F[1] + 306]], C.y, 'opacity=".28"')}</g>`;
+    // the door leaf, hinged on the right: foreshortened while it stands open, swinging flat to close as you linger
+    const leaf = R(dx0, dy0, dw, dh, '#4A5058', st(C.ink, 3)) + R(dx0 + 16, dy0 + 84, 12, 32, '#B9BCC2', st(C.ink, 1.5)) + R(dx0 + 56, dy0 + 26, dw - 96, 34, '#F2EFE6', st(C.ink, 1.5)) + Tx(dx0 + 56 + (dw - 96) / 2, dy0 + 50, 'STOCK', 18, C.ink, 'text-anchor="middle"', FONTS.ui);
+    f += `<g class="pC-door" style="transform-origin:${dx0 + dw}px ${dy0}px;--k0:${n((dw - gap) / dw * 1000) / 1000}">${leaf}${R(dx0, dy0, dw, dh, '#000', 'class="pC-doorshade"')}</g>`;
+    f += queueTV(F[0] + 650, F[1] + 74, 160, 92, { num: '05', glow: true });
     f += ollie({ x: F[0] + 120, y: F[1] + 290, s: 0.5, dark: true, turn: 1 });
-    s += pg.panel('f', F, f, { desc: 'The stockroom door closing. Through the narrowing gap: Jarrad’s shape reaching, and the two silhouettes together. The queue TV: 05.' });
-    s += pg.sfx('BEEP', F[0] + 300, F[1] + 120, { size: 120, rot: -3, fill: '#FFF4CC', stroke: '#8C7A3A', sw: 5, op: 0.5, ls: 16, p: 'f' });
+    s += pg.panel('f', F, f, {
+      desc: 'The stockroom door closing. Through the narrowing gap: Jarrad’s shape reaching, and the two silhouettes together. The queue TV: 05.',
+      guided: [{ focus: [F[0] + 110, F[1], 720, F[3]], move: 'creep' }],
+    });
+    s += pg.sfx('BEEP', F[0] + 250, F[1] + 128, { size: 120, rot: -3, fill: '#FFF4CC', stroke: '#8C7A3A', sw: 5, op: 0.5, ls: 16, p: 'f' });
     return s;
   },
   mount(ctx) {
@@ -543,7 +609,7 @@ page(23, {
     c += R(Cc[0], Cc[1] + 260, Cc[2], 100, '#5A4A58');
     [[Cc[0] + 330, Cc[1] + 300, 70, 10], [Cc[0] + 150, Cc[1] + 335, 90, 12], [Cc[0] + 400, Cc[1] + 345, 50, 8]].forEach(([x, y, rx, ry]) => { c += E(x, y, rx, ry, '#F6B6A6', 'opacity=".75"') + E(x, y, rx * 0.5, ry * 0.4, '#FFE2C8', 'class="pC-shim"'); });
     const obar = {};
-    c += fig('pC_barista', { x: Cc[0] + 120, y: Cc[1] + 296, s: 0.62, face: ['closed', 'raised', 'smile'], props: [], arms: { na: [150, 170] }, out: obar, light: 'side', so: 0.3 });
+    c += fig('pC_barista', { x: Cc[0] + 120, y: Cc[1] + 296, s: 0.62, face: ['closed', 'raised', 'smile'], props: [], arms: { na: [64, 168] }, out: obar, light: 'side', so: 0.3 });
     c += R(Cc[0] + 150, Cc[1] + 240, 34, 6, '#2A2A30') + Ln(Cc[0] + 154, Cc[1] + 246, Cc[0] + 150, Cc[1] + 290, '#2A2A30', 3) + Ln(Cc[0] + 180, Cc[1] + 246, Cc[0] + 184, Cc[1] + 290, '#2A2A30', 3);
     c += fig('chloe', { x: Cc[0] + 330, y: Cc[1] + 340, s: 0.9, pose: 'run', face: 'worried', props: ['lanyard'], light: 'front', so: 0.35 });
     c += Pa(`M${Cc[0] + 200} ${Cc[1] + 150}h60M${Cc[0] + 190} ${Cc[1] + 190}h70M${Cc[0] + 205} ${Cc[1] + 230}h50`, 'none', st('#FFF4D6', 3, 'opacity=".7"'));
@@ -609,7 +675,7 @@ page(23, {
       ctx.after(3000, () => { btn.textContent = 'Please hold…'; ctx.after(1700, () => ctx.next()); });
     };
     if (ctx.mode === 'guided') ctx.onPanel('e', () => ctx.after(2800, card));
-    else ctx.dwell(9000, card);
+    else ctx.dwell(ctx.mode === 'spread' ? 30000 : 12000, card);
   },
 });
 
@@ -620,16 +686,27 @@ function pC_gutterRot(spots, seed, grow = 10) {
   return spots.map(([x, y, reach, count], i) => rotPatch({ x, y, reach, count: count || 40, size: 14, seed: `${seed}${i}`, grow, delay: i * 0.6, box: [x - reach, y - reach, reach * 2, reach * 2] })).join('');
 }
 
-// A hand holding a phone up close, the hoodie sleeve pulled over the wrist.
+// A hand holding a phone up close, the hoodie sleeve pulled over the wrist. Fingers wrap the lower half so the
+// notification stays clear.
 function pC_handPhone(x, y, s, screen) {
   const skin = '#EEC7A6';
   let g = '';
   g += Pa('M-120 300 C-110 210 -96 170 -70 150 L80 150 C104 176 116 230 120 300 Z', '#6B7076', st(C.ink, 5));
   g += Pa('M-92 40 C-112 120 -92 176 -40 186 L60 186 C100 170 112 120 96 40 Z', skin, st(C.ink, 4));
   g += phoneObj(-78, -200, 156, 300, { lit: true, screen: '#F4F6F8', halo: false, content: screen });
-  [-20, 30, 78].forEach((fy) => { g += R(-96, fy, 34, 30, skin, `rx="15" ${st(C.ink, 3.2)}`); });
-  g += `<g transform="translate(80 40) rotate(-28)">${R(-16, -64, 32, 80, skin, `rx="16" ${st(C.ink, 3.2)}`)}</g>`;
+  [10, 38, 66].forEach((fy) => { g += R(-96, fy, 34, 28, skin, `rx="14" ${st(C.ink, 3.2)}`); });
+  g += `<g transform="translate(86 54) rotate(-24)">${R(-16, -60, 32, 76, skin, `rx="16" ${st(C.ink, 3.2)}`)}</g>`;
   return `<g transform="translate(${n(x)} ${n(y)}) scale(${s})">${g}</g>`;
+}
+
+// A palm and splayed fingers flattened against the glass from outside.
+function pC_palm(x, y, k, ang = 0) {
+  const fill = '#CDBBAA', o = st(C.ink, 1.8);
+  let g = '';
+  [[-15, -26, -14], [-5, -31, -4], [5, -30, 5], [14, -25, 14]].forEach(([fx, fy, a]) => { g += `<g transform="translate(${fx} ${fy}) rotate(${a})">${R(-4.5, -15, 9, 24, fill, `rx="4.5" ${o}`)}</g>`; });
+  g += `<g transform="translate(-21 4) rotate(-48)">${R(-4.5, -14, 9, 20, fill, `rx="4.5" ${o}`)}</g>`;
+  g += E(0, 0, 18, 20, fill, o) + E(-2, 2, 9, 10, '#E4D6C8', 'opacity=".7"');
+  return `<g transform="translate(${n(x)} ${n(y)}) rotate(${ang}) scale(${n(k * 1000) / 1000})" opacity=".92">${g}</g>`;
 }
 
 // A queue TV laid out for a name and a line of small print.
@@ -644,9 +721,12 @@ function pC_tvBig(x, y, w, h, num, name, sub) {
   return s;
 }
 
-// Warm colours from page 23, draining from the edges inward.
+// The warm light left over from page 23, draining from the edges inward over two seconds: a dawn wash screened
+// over the night art, its soft edge shrinking towards the centre until it's night again.
 function pC_drain() {
-  return `<g class="pC-drain" pointer-events="none"><ellipse cx="500" cy="760" rx="600" ry="900" fill="url(#gWarm)" opacity=".85"/><ellipse cx="500" cy="760" rx="420" ry="640" fill="#F6B6A6" opacity=".35"/></g>`;
+  const gid = uid('pCwarm');
+  return `<defs><radialGradient id="${gid}"><stop offset="0" stop-color="#FFD9A0" stop-opacity=".9"/><stop offset=".62" stop-color="#F6B6A6" stop-opacity=".82"/><stop offset=".86" stop-color="#C98FA6" stop-opacity=".45"/><stop offset="1" stop-color="#C98FA6" stop-opacity="0"/></radialGradient></defs>` +
+    `<g class="pC-drain" pointer-events="none" style="mix-blend-mode:screen"><ellipse cx="500" cy="760" rx="1000" ry="1420" fill="url(#${gid})"/></g>`;
 }
 
 page(24, {
@@ -657,20 +737,30 @@ page(24, {
     const A = [40, 40, 920, 300], B = [40, 358, 920, 440], Cc = [40, 816, 560, 360], D = [618, 816, 342, 360], Eb = [40, 1194, 920, 266];
     let s = pC_css();
 
-    // 1: the phone buzzes on the jetty
+    // 1: the phone buzzes on the jetty — close enough to read
     let a = R(A[0], A[1], A[2], A[3], 'url(#gDawn)') + R(A[0], A[1] + 200, A[2], 100, 'url(#gSeaDawn)');
     a += Po([[A[0] - 10, A[1] + 300], [A[0] + 380, A[1] + 300], [A[0] + 560, A[1] + 200], [A[0] + 540, A[1] + 200]], '#4A3A44');
-    a += pC_handPhone(A[0] + 600, A[1] + 186, 0.8, (sx, sy, sw, sh) => {
-      let c = signalGlyph(sx + 10, sy + 8, 1.6, '5g', C.ink) + Tx(sx + sw / 2, sy + 72, '6:03', 40, '#3A2A20', 'text-anchor="middle"', FONTS.ui);
-      c += R(sx + 6, sy + 100, sw - 12, 126, '#FFFFFF', `rx="10" ${st('#C9B9A0', 2)}`) + Ci(sx + 22, sy + 120, 9, C.y, st(C.ink, 1.5)) + Tx(sx + 38, sy + 126, 'Optus · now', 14, '#666', '', FONTS.ui);
-      c += textLines(['Your service has', 'been restored.', 'Please proceed', 'to the counter.'], sx + sw / 2, sy + 176, 16, C.ink, { font: FONTS.ui, lh: 1.15 });
+    const PX = A[0] + 610, PY = A[1] + 248, PS = 1.1;
+    a += pC_handPhone(PX, PY, PS, (sx, sy, sw, sh) => {
+      let c = signalGlyph(sx + 8, sy + 8, 1.4, '5g', C.ink) + Tx(sx + sw / 2, sy + 62, '6:03', 38, '#3A2A20', 'text-anchor="middle"', FONTS.ui);
+      const body = ['Your service has', 'been restored.'], ask = ['Please proceed', 'to the counter.'];
+      const fit = (ls, max) => Math.min(max, (sw - 22) / Math.max(...ls.map((l) => textW(l, 1, FONTS.ui))));
+      const f1 = fit(body, 15), f2 = fit(ask, 17);
+      const ch = 34 + f1 * 2.3 + f2 * 2.4;
+      c += R(sx + 5, sy + 78, sw - 10, ch, '#FFFFFF', `rx="10" ${st('#C9B9A0', 2)}`) + Ci(sx + 19, sy + 94, 6.5, C.y, st(C.ink, 1.5)) + Tx(sx + 31, sy + 98, 'Optus · now', 11, '#666', '', FONTS.ui);
+      c += textLines(body, sx + sw / 2, sy + 112 + f1 * 1.1, f1, '#333', { font: FONTS.ui, lh: 1.15 });
+      c += textLines(ask, sx + sw / 2, sy + 116 + f1 * 2.3 + f2 * 1.1, f2, C.ink, { font: FONTS.ui, lh: 1.12 });
       return c;
     });
-    a += Pa(`M${A[0] + 512} ${A[1] + 50}l-24 -10M${A[0] + 506} ${A[1] + 90}l-30 0M${A[0] + 512} ${A[1] + 130}l-24 10M${A[0] + 690} ${A[1] + 50}l24 -10M${A[0] + 696} ${A[1] + 90}l30 0`, 'none', st(C.ink, 4));
-    s += pg.panel('a', A, a, { desc: 'At the jetty, Chloe’s phone buzzes in her hand. Optus: Your service has been restored. Please proceed to the counter.' });
-    s += pg.sfx('bzzt', A[0] + 300, A[1] + 90, { size: 40, rot: -12, fill: '#FFFFFF', p: 'a' }) + pg.sfx('bzzt', A[0] + 820, A[1] + 230, { size: 34, rot: 10, fill: '#FFFFFF', p: 'a', log: false });
+    const pl = PX - 78 * PS, pr = PX + 78 * PS;
+    a += Pa(`M${pl - 18} ${A[1] + 70}l-26 -12M${pl - 22} ${A[1] + 120}l-32 0M${pl - 18} ${A[1] + 170}l-26 12M${pr + 18} ${A[1] + 70}l26 -12M${pr + 22} ${A[1] + 120}l32 0M${pr + 18} ${A[1] + 170}l26 12`, 'none', st(C.ink, 4));
+    s += pg.panel('a', A, a, {
+      desc: 'At the jetty, Chloe’s phone buzzes in her hand. Optus: Your service has been restored. Please proceed to the counter.',
+      guided: [{ focus: [A[0] + 250, A[1], 640, A[3]] }, { focus: [pl - 24, A[1], pr - pl + 48, A[3]], move: 'creep' }],
+    });
+    s += pg.sfx('bzzt', A[0] + 300, A[1] + 90, { size: 40, rot: -12, fill: '#FFFFFF', p: 'a' }) + pg.sfx('bzzt', A[0] + 840, A[1] + 230, { size: 34, rot: 10, fill: '#FFFFFF', p: 'a', log: false });
 
-    // 2: she looks up. She isn't on the jetty.
+    // 2: she looks up. She isn't on the jetty. She's behind the counter.
     let b = storeInterior(B, {
       night: 0.7, vx: 0.56, vy: 0.4, bw: 0.4, bh: 0.48, lights: [0, 0, 1, 0, 0, 0], flicker2: 2, left: 'acc', right: 'display',
       ollie: (bl, bt, bw, bh) => ollie({ x: bl + bw * 0.62, y: bt + bh * 0.99, s: bh / 470, dark: true, turn: -1 }),
@@ -679,9 +769,12 @@ page(24, {
     const ck = [B[0] + 150, B[1] + 92];
     b += Ci(ck[0], ck[1], 44, '#E9E6DE', st(C.ink, 5)) + [...Array(12)].map((_, i) => { const a2 = (i / 12) * Math.PI * 2; return Ln(ck[0] + Math.sin(a2) * 34, ck[1] - Math.cos(a2) * 34, ck[0] + Math.sin(a2) * 40, ck[1] - Math.cos(a2) * 40, C.ink, 2.4); }).join('');
     b += Ln(ck[0], ck[1], ck[0], ck[1] - 32, C.ink, 4) + Ln(ck[0], ck[1], ck[0] + 22, ck[1], C.ink, 5) + Ci(ck[0], ck[1], 4, C.laser);
-    b += counterFore(B, { y: B[1] + 340, tilt: -4, dark: true });
     b += fig('chloe', { x: B[0] + 300, y: B[1] + 830, s: 1.9, face: 'shock', props: ['lanyard'], tilt: -10, light: 'top', so: 0.7, look: [1, -1] });
-    s += pg.panel('b', B, b, { desc: 'She looks up. She isn’t on the jetty. She’s behind the counter in the store. Lights low. The wall clock says 3:00. The roller door is down.' });
+    b += counterFore(B, { y: B[1] + 384, tilt: -4, dark: true });
+    s += pg.panel('b', B, b, {
+      desc: 'She looks up. She isn’t on the jetty. She’s behind the counter in the store. Lights low. The wall clock says 3:00. The roller door is down.',
+      guided: [{ focus: [B[0], B[1], 520, B[3]], move: 'cut' }, { focus: [B[0] + 380, B[1], 540, B[3]] }],
+    });
 
     // 3: the Customers, pressed against the glass. Every table in Cafe 63 is full.
     let c = R(Cc[0], Cc[1], Cc[2], Cc[3], '#05070A');
@@ -691,7 +784,7 @@ page(24, {
       const hy = Cc[1] + 190 + (i % 2) * 20;
       c += customer({ x, y: hy + 318 * k, s: k, kind, seed: `pC24c${i}`, faceOp: 0.95 });
       // palms flattened against the glass
-      c += E(x - 46 * k, hy + 26 * k, 17 * k, 23 * k, '#C9B8A8', `opacity=".85" ${st(C.ink, 2)}`) + E(x + 46 * k, hy + 20 * k, 17 * k, 23 * k, '#C9B8A8', `opacity=".85" ${st(C.ink, 2)}`);
+      c += pC_palm(x - 48 * k, hy + 30 * k, 1.05 * k, -14) + pC_palm(x + 48 * k, hy + 24 * k, 1.05 * k, 12);
     });
     c += rainFx(Cc, { op: 0.5, op2: 0.35 }) + glassDrops(Cc, 'pC24g', 40) + R(Cc[0], Cc[1], Cc[2], Cc[3], '#9FC9DE', 'opacity=".08"');
     c += Ln(Cc[0] + 280, Cc[1], Cc[0] + 280, Cc[1] + Cc[3], '#1C1E22', 8);
@@ -707,10 +800,14 @@ page(24, {
     // 5: she looks down at the lanyard round her neck — 2IC
     let e = R(Eb[0], Eb[1], Eb[2], Eb[3], '#0A0C10') + glow(Eb[0] + 600, Eb[1] + 120, 260, 200, 'gY', 0.18);
     const oe = {};
-    e += fig('chloe', { x: Eb[0] + 680, y: Eb[1] + 820, s: 2.3, face: ['lids', 'worried', 'frown'], tilt: 16, props: [], light: 'top', so: 0.75, tears: true, out: oe });
-    e += Pa(`M${n(oe.head[0] - 40)} ${n(oe.head[1] + 70)}Q${Eb[0] + 520} ${Eb[1] + 190} ${Eb[0] + 500} ${Eb[1] + 150}M${n(oe.head[0] + 30)} ${n(oe.head[1] + 80)}Q${Eb[0] + 560} ${Eb[1] + 230} ${Eb[0] + 530} ${Eb[1] + 150}`, 'none', st(C.y, 7));
-    e += `<g transform="translate(${Eb[0] + 515} ${Eb[1] + 150}) rotate(-8)">${R(-46, -10, 92, 110, '#FFFFFF', st(C.ink, 3.5))}${R(-46, -10, 92, 24, C.y)}${Tx(0, 70, '2IC', 40, C.ink, 'text-anchor="middle"', FONTS.ui)}</g>`;
-    s += pg.panel('e', Eb, e, { desc: 'Chloe looks down at the lanyard round her neck. 2IC.' });
+    e += fig('chloe', { x: Eb[0] + 700, y: Eb[1] + 820, s: 2.3, flip: true, face: ['dot', 'worried', 'tremble'], look: [0.8, 1], tilt: 16, props: [], light: 'top', so: 0.75, tears: true, out: oe });
+    const cx5 = Eb[0] + 545, cy5 = Eb[1] + 150;
+    e += Pa(`M${n(oe.head[0] - 26)} ${n(oe.head[1] + 78)}Q${n(cx5 + 20)} ${n(cy5 + 30)} ${n(cx5 - 30)} ${n(cy5 - 6)}M${n(oe.head[0] + 34)} ${n(oe.head[1] + 84)}Q${n(cx5 + 60)} ${n(cy5 + 70)} ${n(cx5 + 30)} ${n(cy5 - 8)}`, 'none', st(C.ink, 11) + ' ' + '') + Pa(`M${n(oe.head[0] - 26)} ${n(oe.head[1] + 78)}Q${n(cx5 + 20)} ${n(cy5 + 30)} ${n(cx5 - 30)} ${n(cy5 - 6)}M${n(oe.head[0] + 34)} ${n(oe.head[1] + 84)}Q${n(cx5 + 60)} ${n(cy5 + 70)} ${n(cx5 + 30)} ${n(cy5 - 8)}`, 'none', st(C.y, 7));
+    e += `<g transform="translate(${cx5} ${cy5}) rotate(-8)">${R(-46, -10, 92, 110, '#FFFFFF', st(C.ink, 3.5))}${R(-46, -10, 92, 24, C.y)}${Tx(0, 70, '2IC', 40, C.ink, 'text-anchor="middle"', FONTS.ui)}</g>`;
+    s += pg.panel('e', Eb, e, {
+      desc: 'Chloe looks down at the lanyard round her neck. 2IC.',
+      guided: [{ focus: [Eb[0] + 420, Eb[1], 500, Eb[3]], move: 'creep' }, { focus: [Eb[0], Eb[1], 520, Eb[3]] }],
+    });
     s += pg.cap({ p: 'e', x: 70, y: 1222, text: 'Somebody has to close.', style: 'entity', w: 330, size: 26 });
     s += pg.cap({ p: 'e', x: 70, y: 1430, bottom: true, text: '2IC. Short for “there’s no one else.”', style: 'entity', w: 330, size: 26 });
 
@@ -722,7 +819,6 @@ page(24, {
   mount(ctx) {
     ctx.status('sos');
     ctx.ticket('back');
-    ctx.after(1300, () => { const t = document.getElementById('ticket'); if (t) t.classList.add('rot2'); });
     ctx.onPanel('a', () => { ctx.haptic('thump'); ctx.sfx('thump', { v: 0.4 }); }, 300);
     ctx.onPanel('d', () => ctx.sfx('chime'), 3000);
   },
@@ -752,10 +848,9 @@ page(25, {
     const A = [40, 40, 440, 330], B = [498, 40, 462, 330], Cc = [40, 388, 920, 430], D = [40, 836, 920, 220], Eb = [40, 1074, 920, 386];
     let s = pC_css();
 
-    // 1: the retail smile, put on like a mask
+    // 1: tears still wet, she straightens the lanyard and puts the retail smile on like a mask
     let a = R(A[0], A[1], A[2], A[3], '#0B0E13') + glow(A[0] + 220, A[1] + 120, 220, 200, 'gY', 0.18);
-    a += fig('chloe', { x: A[0] + 220, y: A[1] + 800, s: 2.25, view: 'front', face: ['lids', 'worried', 'smile'], tears: true, props: ['lanyard'], light: 'side', so: 0.6, farms: { r: { to: [8, -216], bend: 1 } } });
-
+    a += fig('chloe', { x: A[0] + 220, y: A[1] + 800, s: 2.25, view: 'front', face: ['dot', 'worried', 'grin'], tears: true, props: ['lanyard'], light: 'side', so: 0.6, farms: { r: { to: [12, -244], bend: 1 } } });
     s += pg.panel('a', A, a, { desc: 'Chloe wipes her face and straightens the lanyard. She puts the retail smile on like a mask.' });
 
     // 2: the doors slide open; the first Customer steps in, dripping
@@ -769,11 +864,14 @@ page(25, {
     s += pg.panel('b', B, b, { desc: 'The front doors slide open with a soft chime. The first Customer steps in, dripping.' });
     s += pg.sfx('ding', B[0] + 380, B[1] + 70, { size: 34, rot: 6, fill: '#FFFFFF', sw: 4, p: 'b' });
 
-    // 3: "Can I get you a water while you wait?" — and six faces in the display wall
+    // 3: "Hi! Welcome to Optus. Can I get you a water while you wait?" — and six faces in the display wall behind her
     let c = R(Cc[0], Cc[1], Cc[2], Cc[3], '#07090C');
-    c += R(Cc[0] + 440, Cc[1] + 14, 330, 250, '#1A1E25', st(C.ink, 3)) + R(Cc[0] + 440, Cc[1] + 14, 330, 22, '#3A3410');
-    ['zane', 'luke', 'zee', 'chase', 'luka', 'jarrad'].forEach((w, i) => { c += pC_faceInPhone(Cc[0] + 466 + (i % 3) * 104, Cc[1] + 56 + Math.floor(i / 3) * 104, 56, 82, w); });
+    const WL = [Cc[0] + 420, Cc[1] + 20, 370, 262];
+    c += R(WL[0], WL[1], WL[2], WL[3], '#1A1E25', st(C.ink, 3)) + R(WL[0], WL[1], WL[2], 22, '#3A3410');
+    ['zane', 'luke', 'zee', 'chase', 'luka', 'jarrad'].forEach((w, i) => { c += pC_faceInPhone(WL[0] + 34 + (i % 3) * 114, WL[1] + 44 + Math.floor(i / 3) * 110, 66, 92, w); });
     c += customer({ x: Cc[0] + 180, y: Cc[1] + 560, s: 1.3, kind: 'wind', seed: 'pC25first', flip: false, faceOp: 0.95 });
+    // the Ollie standee has got behind the counter now, in the dark beside the display wall
+    c += ollie({ x: Cc[0] + 366, y: Cc[1] + 312, s: 0.4, dark: true, turn: 1 });
     const och = {};
     c += fig('chloe', { x: Cc[0] + 830, y: Cc[1] + 590, s: 1.35, flip: true, face: ['dot', 'worried', 'grin'], tears: true, props: ['lanyard'], out: och, pose: 'holdOne', light: 'side', so: 0.5 });
     c += counterObj(Cc[0] - 10, Cc[1] + 310, Cc[2] + 20, 130, { dark: true });
@@ -782,14 +880,20 @@ page(25, {
     c += Pa(`M${Cc[0] + 180} ${Cc[1] + 316}C${Cc[0] + 300} ${Cc[1] + 306} ${Cc[0] + 520} ${Cc[1] + 310} ${Cc[0] + 720} ${Cc[1] + 314}C${Cc[0] + 800} ${Cc[1] + 316} ${Cc[0] + 810} ${Cc[1] + 326} ${Cc[0] + 720} ${Cc[1] + 328}C${Cc[0] + 520} ${Cc[1] + 332} ${Cc[0] + 300} ${Cc[1] + 330} ${Cc[0] + 180} ${Cc[1] + 326}Z`, '#16303F', `opacity=".95" ${st('#2E5468', 2)}`);
     c += Pa(`M${Cc[0] + 330} ${Cc[1] + 326}q4 30 0 54M${Cc[0] + 560} ${Cc[1] + 328}q-3 22 0 44`, 'none', st('#16303F', 5));
     c += `<g transform="translate(${Cc[0] + 470} ${Cc[1] + 250})">${R(-14, 0, 28, 64, '#2A3A40', `rx="8" ${st(C.ink, 2.5)}`)}${R(-8, -12, 16, 14, '#1A6A9A', st(C.ink, 2))}${R(-14, 22, 28, 18, '#F2F2EE')}${Tx(0, 35, 'OWS', 10, C.ink, 'text-anchor="middle"', FONTS.ui)}</g>`;
-    s += pg.panel('c', Cc, c, { desc: 'Chloe, smile fixed, tears on her cheeks, across the counter from the Customer. Its sleeves pour bay water across the counter, pooling around her hands. Behind her, on the display wall, six demo phones show faces pressed against the glass from inside: Zane. Luke. Zee. Chase. Luka. Jarrad.' });
-    s += pg.say({ p: 'c', x: Cc[0] + 846, y: Cc[1] + 60, text: 'Hi! Welcome to Optus.', who: 'CHLOE', w: 130, size: 24, tail: [och.head[0] + 6, och.head[1] - 34] });
-    s += pg.say({ p: 'c', x: Cc[0] + 330, y: Cc[1] + 74, text: 'Can I get you a water while you wait?', who: 'CHLOE', w: 200, size: 24, tail: [och.head[0] - 36, och.head[1] + 10], bend: -0.12 });
+    s += pg.panel('c', Cc, c, {
+      desc: 'Chloe, smile fixed, tears on her cheeks, across the counter from the Customer. Its sleeves pour bay water across the counter, pooling around her hands. Behind her, on the display wall, six demo phones show faces pressed against the glass from inside: Zane. Luke. Zee. Chase. Luka. Jarrad.',
+      guided: [{ focus: [Cc[0] + 590, Cc[1], 330, Cc[3]] }],
+    });
+    s += pg.say({ p: 'c', x: Cc[0] + 846, y: Cc[1] + 60, text: 'Hi! Welcome\nto Optus.', who: 'CHLOE', w: 180, size: 24, tail: [och.mouth[0] + 4, och.mouth[1] - 30] });
+    // guided view: the offer and the water pouring, then a slow push in on the six faces behind her
+    pg.stop('cW', [Cc[0] + 60, Cc[1] + 80, 610, 350]);
+    pg.stop('cF', [WL[0] - 10, WL[1] - 8, WL[2] + 6, WL[3] + 16], { move: 'creep' });
+    s += pg.say({ p: 'cW', x: Cc[0] + 440, y: Cc[1] + 382, text: 'Can I get you a water\nwhile you wait?', who: 'CHLOE', w: 320, size: 24, tail: [och.mouth[0] - 10, och.mouth[1] + 26], bend: 0.1 });
 
-    // 4: she serves. The Customer is gone. NOW SERVING 07
+    // 4: she serves. The Customer is gone — a puddle and a sodden, unreadable ticket. NOW SERVING 07
     let d = R(D[0], D[1], D[2], D[3], '#07090C') + R(D[0], D[1] + 150, D[2], 70, '#1A1D22', st(C.ink, 3));
     d += E(D[0] + 260, D[1] + 172, 170, 16, '#16303F', `opacity=".95" ${st('#2E5468', 2)}`);
-    d += `<g transform="translate(${D[0] + 210} ${D[1] + 160}) rotate(-12)">${R(0, -6, 40, 54, '#C9C2B0', st(C.ink, 1.5))}${Tx(20, 26, '06', 20, '#555', 'text-anchor="middle"', FONTS.mono)}</g>`;
+    d += `<g transform="translate(${D[0] + 210} ${D[1] + 160}) rotate(-12)">${R(0, -6, 40, 54, '#B9B2A0', st(C.ink, 1.5))}${E(20, 18, 13, 9, '#6A6A66', 'opacity=".55"')}${E(16, 22, 6, 11, '#4A4A48', 'opacity=".5"')}${R(0, 30, 40, 18, '#16303F', 'opacity=".35"')}</g>`;
     d += queueTV(D[0] + 560, D[1] + 30, 250, 150, { num: '07', numCls: 'pC-pulse pC-07' });
     s += pg.panel('d', D, d, { desc: 'She serves. The Customer is gone — only a puddle and a sodden ticket. The queue TV ticks over: NOW SERVING 07.' });
 
@@ -800,7 +904,10 @@ page(25, {
     e += fig('chloe', { x: Eb[0] + 460, y: Eb[1] + 960, s: 2.6, view: 'front', face: ['blank', 'worried', 'tremble'], tears: true, props: ['lanyard'], out: oc5, light: 'under', so: 0.45 });
     const sc5 = 2.6 * CAST.chloe.h;
     e += `<g class="pC-cpup">${Ci(oc5.head[0] - 9 * sc5, oc5.head[1], 2.3 * sc5, C.ink)}${Ci(oc5.head[0] + 9 * sc5, oc5.head[1], 2.3 * sc5, C.ink)}</g>`;
-    s += pg.panel('e', Eb, e, { desc: 'Chloe looks up — straight out of the page, at you. The smile trembles.' });
+    s += pg.panel('e', Eb, e, {
+      desc: 'Chloe looks up — straight out of the page, at you. The smile trembles.',
+      guided: [{ focus: [Eb[0] + 330, Eb[1] + 10, 570, Eb[3] - 10], move: 'creep' }],
+    });
     s += pg.say({ p: 'e', x: Eb[0] + 760, y: Eb[1] + 120, text: '…How can I help you today?', who: 'CHLOE', w: 200, size: 27, tail: [oc5.head[0] + 70, oc5.head[1] + 40] });
 
     s += pC_gutterRot([[489, 205, 60], [49, 827, 70], [960, 1065, 80], [500, 1065, 50, 30], [960, 300, 60, 30]], 'pC25gr', 10);
@@ -810,10 +917,14 @@ page(25, {
     ctx.onPanel('b', () => ctx.sfx('bell', { v: 0.5 }), 1400);
     ctx.onPanel('d', () => {
       ctx.sfx('chime');
-      // the 07 on the TV and the reader's own 07 ticket pulse together
-      const ph = `${-(Date.now() % 1600) / 1000}s`;
+      // the 07 on the TV and the reader's own 07 ticket pulse together: lock the TV's pulse to the ticket's clock
       ctx.ticket('pulse');
-      ctx.qa('.pC-07').forEach((t) => { t.style.animationDelay = ph; });
+      const tk = document.getElementById('ticket');
+      const ta = tk && tk.getAnimations ? tk.getAnimations().find((x) => x.animationName === 'tkPulse') : null;
+      const tvs = ctx.qa('.pC-07');
+      tvs.forEach((t) => { t.style.animationDelay = tk ? tk.style.getPropertyValue('--pd') : '0s'; });
+      // a fresh animation has no start time until its first frame: wait for it, then share it
+      if (ta && ta.ready) ta.ready.then(() => { if (!ctx.dead) tvs.forEach((t) => t.getAnimations && t.getAnimations().forEach((x) => { x.startTime = ta.startTime; })); }).catch(() => {});
     }, 3000);
     ctx.onPanel('e', () => { ctx.haptic('bell'); ctx.sfx('bell', { v: 0.7 }); }, 4200);
     const pup = ctx.q('.pC-cpup');
@@ -839,12 +950,53 @@ function pC_qPos(t) {
 const pC_qSlot = (k) => pC_qPos((k + 1) / (pC_QN + 1));
 const pC_qTf = (p) => `transform:translate(${n(p[0])}px,${n(p[1])}px) scale(${n(p[2] * 1000) / 1000})`;
 
-// One of the others in the queue: a silhouette lit from below by its own screen.
+// One of the others in the queue: a person-shaped silhouette, head bowed over the phone in both hands, lit from
+// below by its own screen (a different colour each).
 function pC_qFig(i) {
   const grads = ['gS', 'gW', 'gWarm', 'gS', 'gW'], cols = [C.screen, '#F4F8FF', '#FFD9A0', '#B8F0C8', '#E8E8FF'];
   const g = grads[i % grads.length], col = cols[i % cols.length];
-  return glow(0, -200, 90, 110, g, 0.5) + Pa('M-50 -232 C-56 -170 -54 -90 -44 0 L44 0 C54 -90 56 -170 50 -232 C32 -252 -32 -252 -50 -232 Z', C.ink) +
-    E(0, -292, 26, 31, C.ink) + R(-10, -266, 20, 26, C.ink) + R(-13, -214, 26, 42, col, 'rx="4"') + E(0, -268, 20, 8, col, 'opacity=".4"');
+  const r = rng(`pCqf${i}`), hw = 44 + r.jit(6), tilt = 6 + r.jit(8), kind = i % 3;
+  let s = glow(0, -230, 80, 110, g, 0.45);
+  s += Pa(`M${-hw} -232C${-hw - 6} -170 ${-hw + 6} -90 ${-hw + 14} 0L${hw - 14} 0C${hw - 6} -90 ${hw + 6} -170 ${hw} -232C${hw - 8} -256 ${n(hw * 0.5)} -262 16 -264L-16 -264C${n(-hw * 0.5)} -262 ${-hw + 8} -256 ${-hw} -232Z`, C.ink);
+  let head = R(-11, -284, 22, 28, C.ink) + E(0, -306, 25, 30, C.ink);
+  if (kind === 1) head += Pa('M-30 -300C-34 -344 34 -344 30 -300L34 -262L-34 -262Z', C.ink); // hood up
+  if (kind === 2) head += E(-4, -338, 13, 10, C.ink); // hair tied up
+  s += `<g transform="rotate(${n(tilt)} 0 -280)">${head}${glow(0, -284, 22, 16, g, 0.7)}${E(3, -303, 3, 2, col, 'opacity=".4"')}</g>`;
+  s += Pa('M-40 -226C-48 -186 -30 -170 -12 -180M40 -226C48 -186 30 -170 12 -180', 'none', st(C.ink, 17));
+  s += R(-13, -214, 26, 40, col, 'rx="3"') + E(-12, -182, 8, 5, col, 'opacity=".5"') + E(12, -182, 8, 5, col, 'opacity=".5"');
+  return s;
+}
+
+// You, for the last page: the reader's silhouette from the kit, lit only from below by the device in your hands —
+// the light catches the underside of the jaw, the nose, the brows and the fingers round the device, nothing more.
+// One hand holds the device; the other holds up your ticket. dev: phone | fold | foldOpen | laptop.
+function pC_you(x, y, sc, dev) {
+  const col = C.screen;
+  let g = '';
+  const body = 'M-62 -250 C-70 -200 -66 -120 -58 0 L58 0 C66 -120 70 -200 62 -250 C40 -272 -40 -272 -62 -250 Z';
+  const dv = { phone: [-20, -222, 40, 78], fold: [-19, -224, 38, 96], foldOpen: [-46, -216, 92, 84], laptop: [-64, -246, 128, 96] }[dev];
+  const [dx, dy, dw, dh] = dv;
+  const lap = dev === 'laptop';
+  g += glow(0, dy + dh / 2 - 40, 120, 150, 'gS', 0.4);
+  g += Pa(body, C.ink) + R(-12, -292, 24, 34, C.ink) + E(0, -318, 30, 36, C.ink);
+  // the near arm comes round to the device; the far arm holds the ticket up to the counter
+  const hy = lap ? -138 : dy + dh * 0.7;
+  g += Pa(`M-58 -240C-82 -196 -62 ${hy + 8} ${lap ? -40 : dx + 4} ${hy}`, 'none', st(C.ink, 22));
+  g += Pa('M58 -244C76 -230 86 -262 84 -300', 'none', st(C.ink, 22)) + E(84, -306, 13, 15, C.ink);
+  // the device
+  if (lap) g += Po([[-78, -150], [78, -150], [96, -130], [-96, -130]], '#8E949C', st(C.ink, 2)) + R(dx, dy, dw, dh, '#1A1F26', st(C.ink, 3)) + R(dx + 6, dy + 6, dw - 12, dh - 12, col, 'opacity=".92"');
+  else g += R(dx, dy, dw, dh, '#121418', `rx="6" ${st(C.ink, 3)}`) + R(dx + 4, dy + 4, dw - 8, dh - 8, col) + (dev === 'foldOpen' ? Ln(0, dy + 4, 0, dy + dh - 4, '#7FB8CC', 1.4) : '') + (dev === 'fold' ? R(dx - 4, dy, 6, dh, '#22252B') : '');
+  // light from the screen on the face (under the jaw, the nose, the brows) and on the fingers holding the device
+  const hc = uid('pCyou');
+  g += `<clipPath id="${hc}"><ellipse cx="0" cy="-318" rx="30" ry="36"/></clipPath><g clip-path="url(#${hc})">${glow(0, -268, 40, 48, 'gS', 0.75)}${glow(0, -282, 24, 22, 'gS', 0.35)}</g>`;
+  g += Ci(-11, -321, 1.8, col, 'opacity=".55"') + Ci(11, -321, 1.8, col, 'opacity=".55"');
+  const finger = (fx, fy, a) => `<g transform="translate(${fx} ${fy}) rotate(${a})">${R(-4, -9, 8, 18, C.ink, 'rx="4"')}${R(-3, -8, 6, 14, col, 'rx="3" opacity=".42"')}</g>`;
+  if (lap) [-34, -24, -14].forEach((fx, k) => { g += finger(fx, -136, 80 + k * 6); });
+  else {
+    [0.32, 0.52, 0.72].forEach((t) => { g += finger(dx - 1, dy + dh * t, 12); });
+    g += finger(dx + 9, dy + dh * 0.98, -64);
+  }
+  return `<g class="readerfig pC-you"><g transform="translate(${n(x)} ${n(y)}) scale(${n(sc * 1000) / 1000})">${g}</g></g>`;
 }
 
 page(26, {
@@ -873,24 +1025,28 @@ page(26, {
     a += `<g class="pC-queue">${q}</g>`;
     // you
     const ry = dev === 'laptop' ? 1265 : 1170, rs = 2.05;
-    const dy = ry - (dev === 'laptop' ? 200 : 182) * rs;
-    a += `<g class="pC-glowm"><g class="pC-sflick">${glow(480, dy, 260, 230, 'gS', 0.55)}</g></g>`;
-    a += readerFig({ x: 480, y: ry, s: rs, device: dev });
-    a += `<g class="pC-late pC-rot26">${rotPatch({ x: 480, y: dy - 10, reach: 130, count: 60, size: 15, seed: 'pC26rot', grow: 12, box: [330, dy - 110, 300, 260] })}</g>`;
-    // the ticket in your other hand
-    a += ticketProp(650, ry - 600 * (rs / 2.05), { num: '07', name: `07 — ${NAME()}`.slice(0, 20), nameSize: 12, s: 0.66, r: 12 }) + E(690, ry - 476 * (rs / 2.05), 22, 18, C.ink);
+    const DV = { phone: [-20, -222, 40, 78], fold: [-19, -224, 38, 96], foldOpen: [-46, -216, 92, 84], laptop: [-64, -246, 128, 96] }[dev];
+    const dcx = 480 + (DV[0] + DV[2] / 2) * rs, dcy = ry + (DV[1] + DV[3] / 2) * rs;
+    a += `<g class="pC-glowm"><g class="pC-sflick">${glow(480, dcy, 260, 230, 'gS', 0.55)}</g></g>`;
+    // the ticket in your other hand, held up to the counter
+    const tkx = 480 + 84 * rs, tky = ry - 306 * rs;
+    a += `<g transform="translate(${n(tkx)} ${n(tky)}) rotate(9)">${ticketProp(-40, -132, { num: '07', name: `07 — ${NAME()}`.slice(0, 16), nameSize: 15, s: 0.68 })}</g>`;
+    a += pC_you(480, ry, rs, dev);
+    // linger and the rot gets out of your screen, over the bezel and onto your fingers
+    const rw = DV[2] * rs + 70, rh = DV[3] * rs + 60;
+    a += `<g class="pC-late pC-rot26">${rotPatch({ x: dcx, y: dcy, reach: Math.max(rw, rh) * 0.62, count: 64, size: 15, seed: 'pC26rot', grow: 12, box: [dcx - rw / 2 - 10, dcy - rh / 2, rw + 10, rh + 10] })}</g>`;
     // the counter between you and her
     a += Po([[P[0] - 10, 1000], [P[0] + P[2] + 10, 990], [P[0] + P[2] + 10, 1160], [P[0] - 10, 1170]], '#14171C', st(C.ink, 4));
     a += R(P[0], 990, P[2], 8, '#2A3038') + glow(480, 1010, 300, 40, 'gS', 0.35);
     a += rotPatch({ x: 600, y: 1000, reach: 160, count: 40, size: 13, seed: 'pC26ctr', grow: 14, delay: 4, box: [440, 990, 330, 120] });
     // the bottle she slid across: Optus Water Solutions
-    a += Pa('M180 1120 C240 1100 300 1090 330 1080', 'none', st('#2E5468', 10, 'opacity=".5"'));
+    a += Pa('M150 1150 C220 1118 290 1094 340 1078', 'none', st('#2E5468', 26, 'opacity=".22"'))+ [[214, 1124, 7], [262, 1104, 5], [300, 1092, 4]].map(([x, y, r]) => E(x, y, r * 1.6, r, '#9FC9DE', 'opacity=".18"')).join('');
     a += `<g transform="translate(350 1068)">${R(-30, -150, 60, 150, '#1A2228', `rx="12" ${st(C.ink, 3)}`)}${R(-26, -110, 52, 104, '#0C1418', 'rx="8"')}${E(-6, -60, 10, 18, '#2A3A30', 'opacity=".7"')}${R(-14, -172, 28, 24, '#1A6A9A', st(C.ink, 2.5))}${R(-30, -96, 60, 54, '#F4F2EA', st(C.ink, 2))}` +
       textLines(['OPTUS', 'WATER', 'SOLUTIONS'], 0, -70, 9.5, C.ink, { font: FONTS.ui, lh: 1.15 }) + '</g>';
     // PLEASE HOLD — slid onto the counter if you linger
     a += `<g class="pC-sign"><g transform="translate(640 1060)">${Po([[-70, 0], [70, 0], [56, -96], [-56, -96]], '#F4F2EA', st(C.ink, 3))}${R(-50, -84, 100, 18, C.y)}${textLines(['PLEASE', 'HOLD'], 0, -44, 22, C.ink, { font: FONTS.ui })}</g></g>`;
     // the Ollie standee at her shoulder, closest he's ever been, eyes on you
-    a += ollie({ x: 860, y: 1520, s: 1.45, dark: true });
+    a += ollie({ x: 860, y: 1520, s: 1.45, dark: true, flip: true });
     // Chloe's shoulder, soft and out of focus in the foreground, her lanyard across it
     a += `<g filter="url(#pC26blur)">${fig('chloe', { x: 110, y: 2090, s: 3.6, view: 'back', sil: true, rim: 'screen', rimDx: 9 })}${Pa('M40 1196 C110 1150 190 1160 262 1236', 'none', st(C.y, 16, 'opacity=".85"'))}</g>`;
     s += pg.panel('a', P, a, {
@@ -898,7 +1054,7 @@ page(26, {
       guided: [
         { focus: P, move: 'cut' },
         { focus: [250, 380, 460, 560], move: 'creep', hold: 1500 },
-        { focus: [150, 620, 680, 600], move: 'glide' },
+        { focus: [110, 700, 870, 620], move: 'glide' },
         { focus: P, move: 'glide' },
       ],
     });

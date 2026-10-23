@@ -46,60 +46,78 @@ page(4, {
     let a = R(A[0], A[1], A[2], A[3], '#D9D5CA') + R(A[0], A[1], A[2], A[3], 'url(#ht1)', 'opacity=".25"');
     a += R(A[0], A[1] + 330, A[2], 100, '#BDB8AC') + Ln(A[0], A[1] + 330, A[0] + A[2], A[1] + 330, C.ink, 3);
     a += R(A[0] + 40, A[1] + 120, 90, 210, '#A9A496', st(C.ink, 3)) + Ci(A[0] + 116, A[1] + 230, 5, '#777');
-    a += leaderboard(A[0] + 250, A[1] + 30, 520, 300, { sales, glow: 0.25 });
+    a += leaderboard(A[0] + 272, A[1] + 26, 466, 270, { sales, glow: 0.25 });
     const oz = {}, on = {};
-    a += fig('zee', { x: A[0] + 250, y: A[1] + 640, s: 1.2, face: 'angry', pose: 'holdOne', out: oz, light: 'side', so: 0.45 });
-    a += fig('zane', { x: A[0] + 800, y: A[1] + 640, s: 1.2, flip: true, face: 'grin', pose: 'film', out: on, light: 'side', so: 0.45 });
-    s += pg.panel('a', A, a, { desc: 'The back office. A wall monitor: BEST OF THE MONTH — JARRAD, his photo grinning, twelve crowns in a row. Zee is second.' });
-    s += pg.say({ p: 'a', x: 175, y: 110, w: 230, text: 'He quit a year ago. A YEAR. How is he still beating me?', who: 'ZEE', tail: [oz.head[0] + 10, oz.head[1] - 40] });
-    s += pg.say({ p: 'a', x: 860, y: 140, w: 170, text: 'Ghost of Jarrad still smashing target. Respect.', who: 'ZANE', tail: [on.head[0] - 6, on.head[1] - 40], size: 26 });
+    a += fig('zee', { x: A[0] + 222, y: A[1] + 640, s: 1.2, face: 'angry', pose: 'holdOne', out: oz, light: 'side', so: 0.45 });
+    a += fig('zane', { x: A[0] + 834, y: A[1] + 656, s: 1.2, flip: true, face: 'grin', pose: 'film', out: on, light: 'side', so: 0.45 });
+    s += pg.panel('a', A, a, {
+      desc: 'The back office. A wall monitor: BEST OF THE MONTH — JARRAD, his photo grinning, twelve crowns in a row. Zee is second.',
+      guided: [{ focus: [40, 40, 560, 420] }, { focus: [400, 40, 560, 420] }],
+    });
+    s += pg.say({ p: 'a', x: 160, y: 140, w: 200, size: 25, text: 'He quit a year ago. A YEAR. How is he still beating me?', who: 'ZEE', tail: [oz.head[0] + 4, oz.head[1] - 40] });
+    s += pg.say({ p: 'a', x: 872, y: 150, w: 140, size: 24, text: 'Ghost of Jarrad still smashing target. Respect.', who: 'ZANE', tail: [on.head[0] - 4, on.head[1] - 40] });
 
     // panel 2: Optus Water Solutions
-    let b = R(B[0], B[1], B[2], B[3], '#E6E2D8');
-    b += R(B[0], B[1] + 340, B[2], 70, '#C9C4B8');
-    b += ollie({ x: B[0] + 262, y: B[1] + 365, s: 0.62, turn: -1 });
-    b += R(B[0] + 20, B[1] + 362, 230, 22, '#A07A4A', st(C.ink, 3));
+    const B0 = B[0], B1 = B[1];
+    let b = R(B0, B1, B[2], B[3], '#E6E2D8') + R(B0, B1, B[2], B[3], 'url(#ht1)', 'opacity=".18"');
+    b += R(B0, B1 + 340, B[2], 70, '#C9C4B8') + Ln(B0, B1 + 340, B0 + B[2], B1 + 340, C.ink, 2.5);
+    b += ollie({ x: B0 + 262, y: B1 + 365, s: 0.62, turn: -1 });
+    b += R(B0 + 50, B1 + 362, 240, 22, '#A07A4A', st(C.ink, 3)) + Ln(B0 + 50, B1 + 373, B0 + 290, B1 + 373, '#7A5A34', 2);
     for (let j = 0; j < 2; j++) for (let i = 0; i < 4; i++) {
-      const bx = B[0] + 26 + i * 54, by = B[1] + 312 - j * 50;
-      b += R(bx, by, 52, 48, '#D9EAF2', st(C.ink, 2)) + [0, 1, 2].map((k) => R(bx + 5 + k * 16, by + 6, 11, 36, '#9FC9DE', 'rx="4" opacity=".8"')).join('');
+      const bx = B0 + 54 + i * 58, by = B1 + 314 - j * 50;
+      b += R(bx, by, 56, 48, '#D9EAF2', st(C.ink, 2)) + [0, 1, 2].map((k) => R(bx + 5 + k * 17, by + 6, 12, 36, '#9FC9DE', 'rx="4" opacity=".8"') + R(bx + 7 + k * 17, by + 2, 8, 6, '#2E6FA8', 'rx="2"')).join('');
     }
-    b += R(B[0] + 22, B[1] + 262, 222, 100, '#FFFFFF', 'opacity=".18"');
-    // the sign, in Luka's handwriting
-    b += `<g transform="rotate(-4 ${B[0] + 135} ${B[1] + 300})">${R(B[0] + 32, B[1] + 254, 206, 96, '#FFFDF2', st(C.ink, 2))}${R(B[0] + 112, B[1] + 248, 44, 14, '#E8E1C8', 'opacity=".9"')}` +
-      textLines(['OFFER EVERY CUSTOMER WATER.', 'EVERY CUSTOMER. EVERY TIME.', '(IT’S ON THE QA SHEET) — L'], B[0] + 135, B[1] + 300, 14.5, '#1E3A8A', {}) + '</g>';
-    b += R(B[0] + 52, B[1] + 330, 170, 20, '#FFFFFF', st(C.ink, 1.5)) + Tx(B[0] + 137, B[1] + 345, 'OPTUS WATER SOLUTIONS', 12.5, C.ink, 'text-anchor="middle"', FONTS.mono);
-    s += pg.panel('b', B, b, { desc: 'By the door, a pallet of bottled water for customers. Taped to the shrink-wrap, a sign in Luka’s handwriting: Offer every customer water. Every customer. Every time. (It’s on the QA sheet) — L.' });
-    s += pg.say({ p: 'b', x: 112, y: 524, text: 'Optus Water Solutions.', who: 'ZANE', tail: [52, 470], w: 130, size: 22 });
-    s += pg.say({ p: 'b', x: 258, y: 566, text: 'It’s literally just water.', who: 'CHASE', tail: [330, 520], w: 96, size: 21 });
-    s += pg.say({ p: 'b', x: 128, y: 652, text: 'Optus Water Solutions. Short for water.', who: 'ZANE', tail: [40, 610], w: 196, size: 22 });
+    b += R(B0 + 52, B1 + 262, 236, 100, '#FFFFFF', 'opacity=".18"') + Pa(`M${B0 + 60} ${B1 + 268}L${B0 + 110} ${B1 + 358}M${B0 + 210} ${B1 + 266}L${B0 + 250} ${B1 + 356}`, 'none', st('#FFFFFF', 2, 'opacity=".5"'));
+    // the sign, in Luka's handwriting, taped to the shrink-wrap
+    const signL = ['OFFER EVERY CUSTOMER WATER.', 'EVERY CUSTOMER. EVERY TIME.', '(IT’S ON THE QA SHEET) — L'];
+    const signSz = Math.min(15, 192 / Math.max(...signL.map((l) => textW(l, 1))));
+    b += `<g transform="rotate(-4 ${B0 + 170} ${B1 + 296})">${R(B0 + 66, B1 + 252, 208, 90, '#FFFDF2', st(C.ink, 2))}${R(B0 + 148, B1 + 245, 44, 14, '#E8E1C8', 'opacity=".9"')}` +
+      textLines(signL, B0 + 170, B1 + 286, signSz, '#1E3A8A', {}) + '</g>';
+    b += R(B0 + 86, B1 + 330, 170, 20, '#FFFFFF', st(C.ink, 1.5)) + Tx(B0 + 171, B1 + 345, 'OPTUS WATER SOLUTIONS', 12.5, C.ink, 'text-anchor="middle"', FONTS.mono);
+    // Zane, off panel, pointing at the label
+    b += limb([[B0 - 20, B1 + 410], [B0 + 30, B1 + 372], [B0 + 74, B1 + 346]], CAST.zane.skin, 13, 3) + limb([[B0 - 20, B1 + 410], [B0 + 14, B1 + 384]], C.navy, 19, 3) + limb([[B0 + 74, B1 + 346], [B0 + 90, B1 + 340]], CAST.zane.skin, 5, 2.6) + Ci(B0 + 74, B1 + 346, 9, CAST.zane.skin, st(C.ink, 3));
+    s += pg.panel('b', B, b, { desc: 'By the door, a pallet of bottled water for customers. Taped to the shrink-wrap, a sign in Luka’s handwriting: Offer every customer water. Every customer. Every time. (It’s on the QA sheet) — L. Zane’s hand comes in from the side, pointing at the pallet label.' });
+    s += pg.say({ p: 'b', x: B0 + 96, y: B1 + 52, text: 'Optus Water Solutions.', who: 'ZANE', tail: [B0 + 6, B1 + 112], w: 130, size: 22 });
+    s += pg.say({ p: 'b', x: B0 + 232, y: B1 + 106, text: 'It’s literally just water.', who: 'CHASE', tail: [B0 + 288, B1 + 190], w: 96, size: 22 });
+    s += pg.say({ p: 'b', x: B0 + 108, y: B1 + 184, text: 'Optus Water Solutions. Short for water.', who: 'ZANE', tail: [B0 + 6, B1 + 250], w: 176, size: 22 });
 
-    // panel 3: the logs — and the rot in them
-    let c = R(Cc[0], Cc[1], Cc[2], Cc[3], '#CFCAC0');
-    c += R(Cc[0], Cc[1] + 310, Cc[2], 90, '#8A7660', st(C.ink, 3));
-    c += laptopObj(Cc[0] + 160, Cc[1] + 262, 120, 70, { screen: '#DDE6EC' });
+    // panel 3: the logs — and the rot in them. Luke behind the laptop, lit by it; the screen enlarged beside him.
+    const K0 = Cc[0], K1 = Cc[1];
+    let c = R(K0, K1, Cc[2], Cc[3], '#CFCAC0') + R(K0, K1, Cc[2], Cc[3], 'url(#ht1)', 'opacity=".18"');
+    c += R(K0 + 20, K1 + 40, 120, 160, '#BDB7A9', st(C.ink, 2.5)) + R(K0 + 30, K1 + 52, 100, 6, '#9C9688') + R(K0 + 30, K1 + 120, 100, 6, '#9C9688');
     const ol = {};
-    c += fig('luke', { x: Cc[0] + 84, y: Cc[1] + 640, s: 1.12, pose: 'reach', face: 'neutral', out: ol, light: 'front', so: 0.4, no: ['cable'] });
+    c += glow(K0 + 160, K1 + 330, 150, 90, 'gS', 0.45);
+    c += fig('luke', { x: K0 + 158, y: K1 + 684, s: 1.16, view: 'front', pose: 'idle', face: ['dot', 'flat', 'flat'], look: [0.6, 0.4], out: ol, light: 'under', so: 0.5 });
+    c += R(K0, K1 + 372, Cc[2], 40, '#8A7660', st(C.ink, 3));
+    // the laptop, from behind: the lid, its glow on his face
+    c += Po([[K0 + 64, K1 + 376], [K0 + 256, K1 + 376], [K0 + 246, K1 + 336], [K0 + 74, K1 + 336]], '#3A3E46', st(C.ink, 3)) + E(K0 + 160, K1 + 356, 10, 7, '#8B9098');
     // the inset screen
-    const I = [Cc[0] + 320, Cc[1] + 24, 264, 206];
+    const I = [K0 + 322, K1 + 24, 262, 206];
     let scr = R(I[0], I[1], I[2], I[3], '#F2F5F7');
     const logs = ['03:00:00 SALE JGAUNT 5G PLAN', '03:00:00 SALE JGAUNT HANDSET', '03:00:00 SALE JGAUNT 5G PLAN', '03:00:00 SALE JGAUNT WATER x1', '03:00:00 SALE JGAUNT 5G PLAN', '03:00:00 LOGIN JGAUNT OK', '03:00:00 SALE JGAUNT ??????'];
     logs.forEach((l, i) => { scr += rotLine(I[0] + 10, I[1] + 28 + i * 26, l, 17, i < 3 ? 0.04 : i === 5 ? 0 : 0.32, `p4log${i}`, { fill: i === 5 ? '#B3121F' : '#2C3540' }); });
+    scr += R(I[0] + 5, I[1] + 141, I[2] - 10, 23, 'none', st('#B3121F', 2, 'stroke-dasharray="5 4"'));
     scr += rotPatch({ x: I[0] + I[2], y: I[1], box: I, reach: 200, count: 60, size: 14, seed: 'p4rotA', grow: 14 });
     scr += rotPatch({ x: I[0], y: I[1] + I[3], box: I, reach: 140, count: 36, size: 12, seed: 'p4rotB', grow: 18, delay: 2 });
     c += `<g>${R(I[0] - 6, I[1] - 6, I[2] + 12, I[3] + 12, '#FFFFFF', st(C.ink, 5))}${scr}</g>`;
-    s += pg.panel('c', Cc, c, { desc: 'Luke at the laptop, scrolling the sales logs. Inset, the screen: half the log has decayed — characters slumped and dripping into blotches of glyph-mould, creeping in from the corners.' });
-    s += pg.say({ p: 'c', x: Cc[0] + 158, y: Cc[1] + 58, text: 'Every sale’s logged at three a.m. On the dot. Under his login.', who: 'LUKE', tail: [ol.head[0] + 6, ol.head[1] - 36], w: 270, size: 23 });
-    s += pg.say({ p: 'c', x: Cc[0] + 162, y: Cc[1] + 172, text: 'Half the log’s rotted, too. Code rot. JARVIS has code in it older than all of us, and nobody maintains it.', who: 'LUKE', tail: [ol.head[0] + 26, ol.head[1] - 30], w: 300, size: 21 });
-    s += pg.say({ p: 'c', x: Cc[0] + 462, y: Cc[1] + 322, text: 'But that bit’s not rot. That’s somebody signing in.', who: 'LUKE', tail: [I[0] + 120, I[1] + 160], w: 250, size: 23, bend: -0.2 });
+    s += pg.panel('c', Cc, c, {
+      desc: 'Luke behind the laptop, lit by it, scrolling the sales logs. Inset, the screen: half the log has decayed — characters slumped and dripping into blotches of glyph-mould, creeping in from the corners. One line is clean: LOGIN JGAUNT OK.',
+      guided: [{ focus: [358, 478, 330, 400] }],
+    });
+    pg.stop('c2', [I[0] - 14, I[1] - 14, I[2] + 28, 380], { move: 'glide' });
+    s += pg.say({ p: 'c', x: K0 + 150, y: K1 + 54, text: 'Every sale’s logged at three a.m. On the dot. Under his login.', who: 'LUKE', tail: [K0 + 290, K1 + 122], w: 250, size: 23, bend: 0.3 });
+    s += pg.say({ p: 'c', x: K0 + 152, y: K1 + 172, text: 'Half the log’s rotted, too. Code rot. JARVIS has code in it older than all of us, and nobody maintains it.', who: 'LUKE', tail: [ol.head[0] + 14, ol.head[1] - 40], w: 268, size: 21 });
+    s += pg.say({ p: 'c2', x: K0 + 462, y: K1 + 318, text: 'But that bit’s not rot. That’s somebody signing in.', who: 'LUKE', tail: [ol.head[0] + 34, ol.head[1] - 2], w: 230, size: 23 });
 
     // panel 4: "I'll delete them."
-    let d = R(D[0], D[1], D[2], D[3], '#DCD8CD');
+    const D0 = D[0], D1 = D[1];
+    let d = R(D0, D1, D[2], D[3], '#DCD8CD') + R(D0, D1, D[2], D[3], 'url(#ht1)', 'opacity=".18"');
     const ok = {}, oz2 = {};
-    d += fig('luka', { x: D[0] + 120, y: D[1] + 560, s: 1.3, face: 'flat', out: ok, light: 'side', so: 0.5 });
-    d += fig('zee', { x: D[0] + 360, y: D[1] + 570, s: 1.3, flip: true, face: 'shock', out: oz2, pose: 'holdOne' });
+    d += fig('luka', { x: D0 + 112, y: D1 + 560, s: 1.25, face: 'flat', out: ok, light: 'side', so: 0.5, props: ['lanyard'] });
+    d += fig('zee', { x: D0 + 336, y: D1 + 552, s: 1.3, flip: true, face: 'shock', out: oz2, pose: 'holdOne', arms: { na: [30, 150] }, light: 'side', so: 0.4 });
     s += pg.panel('d', D, d, { desc: 'Luka, flat. Zee, turning on him.' });
-    s += pg.say({ p: 'd', x: 205, y: 935, text: 'It’s a glitch. I’ll delete them.', who: 'LUKA', tail: [ok.head[0] + 16, ok.head[1] - 30], w: 210, size: 26 });
-    s += pg.say({ p: 'd', x: 360, y: 1050, text: 'You’ve been deleting them?', who: 'ZEE', tail: [oz2.head[0] - 6, oz2.head[1] - 30], w: 170, size: 26 });
+    s += pg.say({ p: 'd', x: D0 + 118, y: D1 + 50, text: 'It’s a glitch. I’ll delete them.', who: 'LUKA', tail: [ok.head[0] + 10, ok.head[1] - 34], w: 196, size: 25 });
+    s += pg.say({ p: 'd', x: D0 + 330, y: D1 + 70, text: 'You’ve been deleting them?', who: 'ZEE', tail: [oz2.head[0] - 4, oz2.head[1] - 34], w: 170, size: 25 });
 
     // panel 5: memory — a year ago, at the roller door
     let e = R(Eb[0], Eb[1], Eb[2], Eb[3], '#9A968C');
@@ -107,12 +125,13 @@ page(4, {
     for (let yy = Eb[1]; yy < Eb[1] + 120; yy += 12) e += Ln(Eb[0] + 40, yy, Eb[0] + 420, yy, '#43464C', 2);
     e += R(Eb[0] + 40, Eb[1] + 112, 380, 10, '#2E3137');
     const oj = {};
-    e += fig('jarrad', { x: Eb[0] + 250, y: Eb[1] + 560, s: 1.25, view: 'front', face: 'smile', pose: 'holdOne', out: oj, light: 'side', so: 0.35, props: ['lanyard', 'keyring'] });
-    e += `<g transform="translate(${n(oj.nh[0])} ${n(oj.nh[1] + 8)})">${Ci(0, 0, 7, 'none', st('#9AA0A6', 3))}${Pa('M0 7l-4 16l6 2M3 7l8 14', 'none', st('#9AA0A6', 3.4))}</g>`;
+    e += fig('jarrad', { x: Eb[0] + 240, y: Eb[1] + 534, s: 1.12, view: 'front', face: 'smile', pose: 'holdOne', farms: { r: [58, 192] }, out: oj, light: 'side', so: 0.35, props: ['lanyard'] });
+    // the store keys held up, the volleyball keyring swinging under them
+    e += `<g transform="translate(${n(oj.nh[0] + 2)} ${n(oj.nh[1] + 4)}) scale(1.5)">${Ci(0, 4, 7, 'none', st('#C9CDD2', 2.6))}${Pa('M-2 10 l-6 18 l4 1 l1 -3 l2 1 l1 -3 M3 10 l7 16 l4 -2 M5 15 l3 7', 'none', st('#C9CDD2', 2.8))}${Ln(1, 11, 1, 24, '#888', 1.4)}<g transform="translate(1 31)">${Ci(0, 0, 7, '#FFFFFF', st(C.ink, 1.6))}${Pa('M-6 -2.5Q0 2 6 -2.5M-4.5 4.5Q0 -2 1.8 -7', 'none', st('#1E5AA8', 1.2))}</g></g>`;
     e += R(Eb[0], Eb[1], Eb[2], Eb[3], 'url(#grain)', 'class="fx-flicker2" opacity=".9"') + R(Eb[0], Eb[1], Eb[2], Eb[3], 'url(#ht2)', 'opacity=".25"');
     s += pg.panel('e', Eb, `<g filter="url(#fGrey)">${e}</g>`, { desc: 'A memory, in grey: a year ago, Jarrad at the roller door, keys in hand, smiling.', path: raggedRect(Eb[0], Eb[1], Eb[2], Eb[3], 'p4mem', 3), sw: 8 });
     s += pg.say({ p: 'e', x: Eb[0] + 120, y: Eb[1] + 60, text: 'You go, mate. I’ll lock up.', who: 'JARRAD', tail: [oj.head[0] - 20, oj.head[1] - 10], w: 160, size: 26 });
-    s += pg.cap({ p: 'e', x: Eb[0] + Eb[2] - 16, y: Eb[1] + Eb[3] - 14, right: true, bottom: true, text: 'Luka left at 2:40.', w: 220, style: 'memory' });
+    s += pg.cap({ p: 'e', x: Eb[0] + 18, y: Eb[1] + Eb[3] - 16, bottom: true, text: 'Luka left at 2:40.', w: 220, style: 'memory' });
 
     // panel 6: Luka alone at the monitor
     let f = R(F[0], F[1], F[2], F[3], '#1B2530') + R(F[0], F[1], F[2], F[3], 'url(#htN)', 'opacity=".4"');
@@ -153,15 +172,15 @@ page(5, {
   render(pg) {
     const A = [40, 40, 920, 290];
     const gx = [40, 352.5, 665], gw = 295, r1 = 348, r2 = 606, gh = 240;
-    const ex = [40, 308, 736], ew = [250, 410, 224], gh2 = 270;
-    const H8 = [40, 894, 920, 566];
+    const ex = [40, 308, 736], ew = [250, 410, 224], gh2 = 334;
+    const H8 = [40, 958, 920, 502];
     let s = '';
     // 1: the ceiling speaker, music spilling out
     let a = R(A[0], A[1], A[2], A[3], '#D7D3C8') + R(A[0], A[1], A[2], 60, '#C2BEB2');
     a += fluoro(A[0] + 600, A[1] + 30, 200, { cone: false });
     a += Ci(A[0] + 470, A[1] + 70, 46, '#EDEAE2', st(C.ink, 4)) + Ci(A[0] + 470, A[1] + 70, 34, 'url(#ht2)') + Ci(A[0] + 470, A[1] + 70, 34, 'none', st(C.ink, 2));
     a += notesFx(A[0] + 470, A[1] + 110, { count: 9, dx: 300, dy: 90, seed: 'p5n', cls: 'p5-notes' }) + notesFx(A[0] + 470, A[1] + 110, { count: 6, dx: -320, dy: 80, seed: 'p5m', cls: 'p5-notes' });
-    s += pg.panel('a', A, a, { desc: 'A ceiling speaker, music notes spilling out of it.' });
+    s += pg.panel('a', A, a, { desc: 'A ceiling speaker, music notes spilling out of it.', guided: [{ focus: [40, 40, 530, 290] }, { focus: [522, 40, 438, 290] }] });
     s += pg.cap({ p: 'a', x: 58, y: 56, text: '11:46 PM.', w: 160 });
     s += pg.say({ p: 'a', x: 150, y: 165, text: 'Can we PLEASE put Kanye on.', who: 'ZANE', tail: [80, 330], w: 170, size: 26 });
     s += pg.say({ p: 'a', x: 370, y: 248, text: 'Bon Jovi’s better than Kanye. 2IC’s call.', who: 'LUKA', tail: [330, 330], w: 240, size: 26 });
@@ -170,12 +189,12 @@ page(5, {
 
     // 2: a display-wall phone, bars dropping
     let b = R(gx[0], r1, gw, gh, '#E9E6DE');
-    b += phoneObj(gx[0] + 60, r1 + 30, 176, 300, { lit: true, screen: '#EAF6FB', halo: false });
-    b += statusInsert(gx[0] + 86, r1 + 66, 92, 'bars4', 'p5-s2', { to: '3g' });
-    b += Tx(gx[0] + 148, r1 + 170, '11:47', 44, '#1C2A33', 'text-anchor="middle"', FONTS.ui);
+    b += phoneObj(gx[0] + 28, r1 + 34, 150, 270, { lit: true, screen: '#EAF6FB', halo: false });
+    b += statusInsert(gx[0] + 46, r1 + 68, 84, 'bars4', 'p5-s2', { to: '3g' });
+    b += Tx(gx[0] + 103, r1 + 158, '11:47', 42, '#1C2A33', 'text-anchor="middle"', FONTS.ui) + Tx(gx[0] + 103, r1 + 184, 'Thursday', 15, '#56626B', 'text-anchor="middle"', FONTS.ui);
     s += pg.panel('b', [gx[0], r1, gw, gh], b, { desc: 'A display-wall phone, its signal bars dropping.' });
     s += pg.cap({ p: 'b', x: gx[0] + 14, y: r1 + 14, text: '11:47 PM.', w: 140, size: 20 });
-    s += pg.say({ p: 'b', x: gx[0] + 200, y: r1 + 200, text: 'Dropped to 3G…', who: 'LUKE', tail: [gx[0] + 290, r1 + 250], w: 120, size: 24 });
+    s += pg.say({ p: 'b', x: gx[0] + 224, y: r1 + 198, text: 'Dropped to 3G…', who: 'LUKE', tail: [gx[0] + 288, r1 + 238], w: 110, size: 24 });
 
     // 3: EFTPOS and the laptop — no connection, and a bloom of rot in the corners
     let c = R(gx[1], r1, gw, gh, '#DAD6CC') + R(gx[1], r1 + 170, gw, 70, '#8A7660');
@@ -200,38 +219,42 @@ page(5, {
     s += pg.say({ p: 'd', x: gx[2] + 110, y: r1 + 210, text: '…Finally.', who: 'ZANE', tail: [gx[2] + 40, r1 + 250], w: 110, size: 26 });
 
     // 5: every device the same
-    let e = R(ex[0], r2, ew[0], gh2, '#BDB9AE');
-    e += `<g transform="rotate(-8 ${ex[0] + 70} ${r2 + 140})">${R(ex[0] + 18, r2 + 70, 100, 134, C.y, `rx="10" ${st(C.ink, 3)}`)}${R(ex[0] + 26, r2 + 78, 84, 114, '#EAF2F6')}</g>`;
-    e += statusInsert(ex[0] + 32, r2 + 98, 58, 'bars4', 'p5-s5a');
+    let e = R(ex[0], r2, ew[0], gh2, '#BDB9AE') + R(ex[0], r2 + 250, ew[0], 90, '#A9A498') + '<g transform="translate(0 40)">';
+    e += `<g transform="rotate(-8 ${ex[0] + 70} ${r2 + 140})">${R(ex[0] + 18, r2 + 70, 100, 134, C.y, `rx="10" ${st(C.ink, 3)}`)}${R(ex[0] + 26, r2 + 78, 84, 114, '#EAF2F6')}` +
+      statusInsert(ex[0] + 32, r2 + 86, 46, 'bars4', 'p5-s5a') + R(ex[0] + 34, r2 + 110, 68, 8, '#C9D6DE', 'rx="2"') + R(ex[0] + 34, r2 + 124, 50, 8, '#C9D6DE', 'rx="2"') + R(ex[0] + 34, r2 + 150, 68, 30, '#DCE6EC', 'rx="3"') + '</g>';
     e += R(ex[0] + 128, r2 + 130, 56, 62, '#2C2E33', `rx="14" ${st(C.ink, 3)}`) + R(ex[0] + 135, r2 + 138, 42, 46, '#101418', 'rx="8"') + R(ex[0] + 144, r2 + 96, 24, 34, '#6B7076') + R(ex[0] + 144, r2 + 192, 24, 50, '#6B7076');
     e += swap(Tx(ex[0] + 156, r2 + 167, '4G', 15, '#FFFFFF', 'text-anchor="middle"', FONTS.ui), Tx(ex[0] + 156, r2 + 167, 'SOS', 15, '#FF6A5A', 'text-anchor="middle"', FONTS.ui), 'p5-s5b');
     e += phoneObj(ex[0] + 186, r2 + 92, 54, 104, { lit: true, screen: '#EAF2F6', halo: false, rot: 8 });
-    e += `<g transform="rotate(8 ${ex[0] + 213} ${r2 + 144})">${statusInsert(ex[0] + 191, r2 + 104, 42, 'bars4', 'p5-s5c')}</g>`;
+    e += `<g transform="rotate(8 ${ex[0] + 213} ${r2 + 144})">${swap(signalGlyph(ex[0] + 194, r2 + 102, 0.55, 'bars4', C.ink).replace(/>4G</, '><') + Tx(ex[0] + 213, r2 + 150, '4G', 16, C.ink, 'text-anchor="middle"', FONTS.ui),
+      signalGlyph(ex[0] + 194, r2 + 102, 0.55, 'sos', '#B3121F').replace(/>SOS only</, '><') + Tx(ex[0] + 213, r2 + 146, 'SOS', 19, '#B3121F', 'text-anchor="middle"', FONTS.ui) + Tx(ex[0] + 213, r2 + 162, 'only', 11, '#B3121F', 'text-anchor="middle"', FONTS.ui), 'p5-s5c')}</g>`;
+    e += '</g>';
     s += pg.panel('e', [ex[0], r2, ew[0], gh2], e, { desc: 'Zee’s tablet, Chloe’s watch, Zane’s phone: all the same.' });
-    s += pg.say({ p: 'e', x: ex[0] + 84, y: r2 + 40, text: 'Mine says SOS.', who: 'ZEE', tail: [ex[0] + 60, r2 + 76], w: 120, size: 23 });
-    s += pg.say({ p: 'e', x: ex[0] + 160, y: r2 + 236, text: 'Everyone’s says SOS.', who: 'CHASE', tail: [ex[0] + 240, r2 + 280], w: 150, size: 23 });
+    s += pg.say({ p: 'e', x: ex[0] + 96, y: r2 + 46, text: 'Mine says SOS.', who: 'ZEE', tail: [ex[0] + 6, r2 + 104], w: 120, size: 23 });
+    s += pg.say({ p: 'e', x: ex[0] + 150, y: r2 + 286, text: 'Everyone’s says SOS.', who: 'CHASE', tail: [ex[0] + 244, r2 + 330], w: 150, size: 23 });
 
     // 6: short for Save Our Souls
     let f = R(ex[1], r2, ew[1], gh2, '#C4C0B5') + R(ex[1], r2, ew[1], gh2, 'url(#ht1)', 'opacity=".25"');
     const oz = {}, ol = {};
-    f += fig('zane', { x: ex[1] + 60, y: r2 + 640, s: 1.2, face: 'grin', out: oz, props: [] });
-    f += fig('luke', { x: ex[1] + 350, y: r2 + 650, s: 1.2, flip: true, face: 'flat', out: ol, props: ['headtorch'] });
+    f += fig('zane', { x: ex[1] + 112, y: r2 + 578, s: 1.0, face: 'grin', out: oz, props: ['gimbal'], pose: 'holdOne', light: 'side', so: 0.4 });
+    f += fig('luke', { x: ex[1] + 332, y: r2 + 548, s: 1.0, flip: true, face: 'flat', out: ol, light: 'side', so: 0.4 });
     s += pg.panel('f', [ex[1], r2, ew[1], gh2], f, { desc: 'Zane, grinning. Luke, unimpressed.' });
-    s += pg.say({ p: 'f', x: ex[1] + 120, y: r2 + 50, text: 'SOS. Short for Save Our Souls.', who: 'ZANE', tail: [oz.head[0] + 10, oz.head[1] - 34], w: 200, size: 24 });
-    s += pg.say({ p: 'f', x: ex[1] + 290, y: r2 + 128, text: 'It’s not short for anything. It’s just easy Morse.', who: 'LUKE', tail: [ol.head[0] - 6, ol.head[1] - 34], w: 200, size: 23 });
-    s += pg.say({ p: 'f', x: ex[1] + 150, y: r2 + 216, text: 'It’s short for Save Our Souls, Luke.', who: 'ZANE', tail: [oz.head[0] + 24, oz.head[1] - 4], w: 210, size: 23 });
+    s += pg.say({ p: 'f', x: ex[1] + 128, y: r2 + 50, text: 'SOS. Short for Save Our Souls.', who: 'ZANE', tail: [oz.head[0] - 30, oz.head[1] - 40], w: 220, size: 23 });
+    s += pg.say({ p: 'f', x: ex[1] + 300, y: r2 + 118, text: 'It’s not short for anything. It’s just easy Morse.', who: 'LUKE', tail: [ol.head[0] - 2, ol.head[1] - 30], w: 180, size: 22 });
+    s += pg.say({ p: 'f', x: ex[1] + 134, y: r2 + 190, text: 'It’s short for Save Our Souls, Luke.', who: 'ZANE', tail: [oz.head[0] + 14, oz.head[1] - 28], w: 230, size: 22 });
 
     // 7: across the walkway, Cafe 63 comes on by itself
     const gxx = ex[2], gww = ew[2];
     let g = R(gxx, r2, gww, gh2, '#141B24');
-    const cbox = [gxx + 16, r2 + 40, 192, 200];
+    const cbox = [gxx + 16, r2 + 56, 192, 250];
     g += `<g>${cafe63(cbox, { lights: 0, steam: false })}</g>`;
     g += `<g class="c63-lit">${[0, 1, 2, 3].map((i) => `<g class="c63l" style="--li:${i}">${glow(cbox[0] + cbox[2] * (0.15 + i * 0.23), cbox[1] + cbox[3] * 0.3, 40, 34, 'gWarm', 0.85)}</g>`).join('')}` +
-      `<g class="c63l" style="--li:4">${R(cbox[0] + cbox[2] * 0.64, cbox[1] + cbox[3] * 0.2, cbox[2] * 0.3, cbox[3] * 0.1, '#0B0B0B')}${Tx(cbox[0] + cbox[2] * 0.79, cbox[1] + cbox[3] * 0.275, 'ORDER READY', 11, '#7CFF9A', 'text-anchor="middle"', FONTS.mono)}<g class="fx-steam">${Pa(`M${cbox[0] + cbox[2] * 0.77} ${cbox[1] + cbox[3] * 0.37}q-8 -14 0 -26q8 -12 0 -24`, 'none', st('#EEE', 3, 'opacity=".7"'))}</g></g></g>`;
+      `<g class="c63l" style="--li:4">${R(cbox[0] + cbox[2] * 0.64, cbox[1] + cbox[3] * 0.2, cbox[2] * 0.32, cbox[3] * 0.1, '#0B0B0B', st('#444', 1.2))}${Tx(cbox[0] + cbox[2] * 0.79, cbox[1] + cbox[3] * 0.275, 'ORDER READY', 13, '#7CFF9A', 'text-anchor="middle"', FONTS.mono)}<g class="fx-steam">${Pa(`M${cbox[0] + cbox[2] * 0.77} ${cbox[1] + cbox[3] * 0.37}q-8 -14 0 -26q8 -12 0 -24`, 'none', st('#EEE', 3, 'opacity=".7"'))}</g></g></g>`;
     g += rainFx([gxx, r2, gww, gh2], { op: 0.6, op2: 0.4 }) + glassDrops([gxx, r2, gww, gh2], 'p5g', 20);
     g += R(gxx, r2, 12, gh2, '#2A2D33') + R(gxx + gww - 12, r2, 12, gh2, '#2A2D33');
+    // the machine's hiss, lettered as it starts (appears with the last light)
+    g += `<g class="c63l" style="--li:4">${pg.sfx('SSSSHHHHHH', gxx + 112, r2 + 42, { size: 31, rot: -4, fill: '#FFFFFF' })}</g>`;
     s += pg.panel('g', [gxx, r2, gww, gh2], g, { desc: 'Through the front glass, across the walkway: Cafe 63, shut since four, its lights flicking on one by one. Its coffee machine starts by itself. The order screen: ORDER READY.' });
-    s += pg.sfx('SSSSHHHHHH', gxx + 112, r2 + 34, { size: 30, rot: -4, fill: '#FFFFFF', p: 'g' });
+
 
     // 8: every demo phone wakes at once
     let h = R(H8[0], H8[1], H8[2], H8[3], '#0B0E13');
@@ -243,34 +266,47 @@ page(5, {
       h += R(px, py, 40, 66, '#121418', `rx="5" ${st(C.ink, 2)}`) + R(px + 3, py + 4, 34, 58, '#1A2028', 'rx="3"') + R(px + 6, py + 66, 28, 6, '#2A2D33');
       lit += `<g class="wv" style="--w:${i + j * 0.5}">${glow(px + 20, py + 33, 54, 50, 'gS', 0.55)}${R(px + 3, py + 4, 34, 58, '#D8F4FF', 'rx="3" class="lit"')}${(i + j) % 3 === 0 ? `<path class="fx-ring" style="--rd:${(i * 0.17).toFixed(2)}s" d="M${px + 46} ${py + 18}q8 14 0 28M${px - 6} ${py + 18}q-8 14 0 28" fill="none" stroke="${C.y}" stroke-width="3"/>` : ''}</g>`;
     }
+    // tiny ringing lettering all over the wall, each arriving as its column lights up
+    const rr = rng('p5brr');
+    for (let i = 0; i < 14; i++) {
+      const bx = H8[0] + 90 + rr() * 760, by = H8[1] + 80 + rr() * 300;
+      lit += `<g class="wv" style="--w:${n((bx - wall[0] - 28) / 81 + 0.6)}">${pg.sfx('brrr', bx, by, { size: 18 + rr() * 16, rot: rr.jit(20), fill: C.y, sw: 4, log: i === 0, op: 0.95 })}</g>`;
+    }
     h += `<g class="p5-wave">${lit}</g>`;
     h += R(H8[0], H8[1] + 380, H8[2], 200, '#14181E');
     h += `<path d="M${H8[0]} ${H8[1] + 380}L${H8[0] + H8[2]} ${H8[1] + 380}L${H8[0] + H8[2]} ${H8[1] + 580}L${H8[0]} ${H8[1] + 580}Z" fill="url(#gUnderS)" opacity=".35"/>`;
     const team = [['luka', 200, 'back'], ['chase', 330, 'back'], ['zee', 455, 'back'], ['luke', 600, 'back'], ['zane', 735, 'back'], ['chloe', 860, 'side']];
     team.forEach(([w, x, v], i) => { h += fig(w, { x: H8[0] + x - 40, y: H8[1] + 650 + (i % 2) * 16, s: 1.0, view: v === 'side' ? 'side' : 'back', sil: true, rim: 'screen', rimDx: i < 3 ? 5 : -5, flip: v === 'side', tilt: -10 }); });
-    h += ollie({ x: H8[0] + 70, y: H8[1] + 520, s: 0.6, dark: true, turn: 1 });
+    h += ollie({ x: H8[0] + 70, y: H8[1] + 492, s: 0.6, dark: true, turn: 1 });
     s += pg.panel('h', H8, h, { desc: 'The whole team looking up at the display wall, faces lit, as every demo phone wakes at once and rings. At the edge of the light, the Ollie standee — nearer the counter than it was before.' });
-    const rr = rng('p5brr');
-    for (let i = 0; i < 14; i++) s += pg.sfx('brrr', H8[0] + 90 + rr() * 760, H8[1] + 80 + rr() * 300, { size: 18 + rr() * 16, rot: rr.jit(20), fill: C.y, sw: 4, log: i === 0, op: 0.95, p: 'h', cls: 'p5-brr' });
     return s;
   },
   mount(ctx) {
     const on = (sel) => ctx.qa(sel).forEach((x) => x.classList.add('on'));
     ctx.status('bars');
-    ctx.onPanel('b', () => { on('.p5-s2'); ctx.status('3g'); }, 1600);
-    ctx.onPanel('d', () => {
-      on('.p5-src');
-      ctx.qa('.p5-notes').forEach((x) => x.classList.add('stopped'));
-      Sound.cut('store');
-      Sound.silence(1500);
-    }, 3400);
-    ctx.onPanel('e', () => { on('.p5-s5a'); ctx.after(300, () => on('.p5-s5b')); ctx.after(600, () => on('.p5-s5c')); ctx.status('sos'); }, 4400);
-    ctx.onPanel('g', () => { ctx.q('.pn[data-panel="g"]').classList.add('go'); }, 5600);
-    ctx.onPanel('h', () => {
-      ctx.q('.pn[data-panel="h"]').classList.add('go');
-      ctx.sfx('chorus');
-      ctx.haptic('ring');
-      ctx.after(1600, () => { ctx.sfx('chorus'); ctx.haptic('ring'); });
-    }, 7400);
+    const run = () => {
+      ctx.onPanel('b', () => { on('.p5-s2'); ctx.status('3g'); }, 1600);
+      ctx.onPanel('d', () => {
+        on('.p5-src');
+        ctx.qa('.p5-notes').forEach((x) => x.classList.add('stopped'));
+        Sound.cut('store');
+        Sound.silence(1500);
+      }, 3400);
+      ctx.onPanel('e', () => { on('.p5-s5a'); ctx.after(300, () => on('.p5-s5b')); ctx.after(600, () => on('.p5-s5c')); ctx.status('sos'); }, 4400);
+      ctx.onPanel('g', () => { ctx.q('.pn[data-panel="g"]').classList.add('go'); }, 5600);
+      ctx.onPanel('h', () => {
+        ctx.q('.pn[data-panel="h"]').classList.add('go');
+        ctx.sfx('chorus');
+        ctx.haptic('ring');
+        ctx.after(1600, () => { ctx.sfx('chorus'); ctx.haptic('ring'); });
+      }, 7400);
+    };
+    if (ctx.mode !== 'spread') { run(); return; }
+    // In a spread the reader starts on page 4: the network holds until they come over to this page
+    // (the pointer crosses onto it), or after a fair while on the spread.
+    let started = false;
+    const go = () => { if (!started) { started = true; run(); } };
+    ctx.onPointer((nx, ny, p) => { if (p && p.leaf === ctx.el) go(); });
+    ctx.dwell(22000, go);
   },
 });
