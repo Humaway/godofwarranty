@@ -221,9 +221,11 @@ function makeCtx(i, el, svg, pg, o) {
         const d = (e) => {
           e.preventDefault();
           Reader.dragging = true;
+          Reader.dragMoved = false;
+          const x0 = e.clientX, y0 = e.clientY;
           try { t.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
           fn(ctx.toPage(e.clientX, e.clientY), e);
-          const mv = (ev) => fn(ctx.toPage(ev.clientX, ev.clientY), ev);
+          const mv = (ev) => { if (Math.hypot(ev.clientX - x0, ev.clientY - y0) > 10) Reader.dragMoved = true; fn(ctx.toPage(ev.clientX, ev.clientY), ev); };
           const up = () => { t.removeEventListener('pointermove', mv); t.removeEventListener('pointerup', up); t.removeEventListener('pointercancel', up); setTimeout(() => (Reader.dragging = false), 0); end && end(); };
           t.addEventListener('pointermove', mv); t.addEventListener('pointerup', up); t.addEventListener('pointercancel', up);
         };
@@ -248,6 +250,8 @@ function makeCtx(i, el, svg, pg, o) {
     next: () => next(),
     stopIndex: () => Reader.stop,
     isLastStop: () => Reader.mode !== 'guided' || !Reader.leaves[0] || Reader.stop >= (Reader.leaves[0].stops || []).length - 1,
+    // run fn when the page unmounts (for listeners a page adds itself)
+    onCleanup(fn) { cleanups.push(fn); },
     _cleanup() { ctx.dead = true; timers.forEach((f) => f()); cleanups.forEach((f) => f()); },
   };
   return ctx;
@@ -411,6 +415,9 @@ function setTitle(t) { document.title = t; }
 function ticketState(k) {
   const t = $('#ticket');
   t.classList.remove('gone', 'back', 'pulse', 'rot1', 'rot2');
+  // the UI rot level belongs to the page range, not to whatever state a page asks for
+  const lvl = +($('#app').dataset.rot || 0);
+  if (lvl && k !== 'rot1' && k !== 'rot2') t.classList.add(lvl === 1 ? 'rot1' : 'rot2');
   if (k === 'hide') t.classList.add('gone');
   else if (k === 'back') t.classList.add('back');
   else if (k === 'pulse') {
@@ -436,13 +443,12 @@ function chrome() {
   // title
   Reader.titleBase = last === LAST ? 'Please hold…' : 'SOS ONLY — Optus Redcliffe';
   if (!document.hidden) setTitle(Reader.titleBase);
-  // ticket
-  $('#ticket').hidden = !Save.d.checkedIn;
-  ticketState(null);
   // UI rot staging (§10): 19–22 the UI decays, 23 is clean, 24–26 it's back worse.
   const rotLevel = last >= 19 && last <= 22 ? 1 : last >= 24 && last <= 26 ? 2 : 0;
   app.dataset.rot = rotLevel;
-  if (rotLevel) ticketState(rotLevel === 1 ? 'rot1' : 'rot2');
+  // ticket
+  $('#ticket').hidden = !Save.d.checkedIn;
+  ticketState(null);
   // bleed margins in page mode
   const bleedSrc = PAGES[Reader.idx] || P;
   app.dataset.bleed = Reader.idx === 0 ? 'checkin' : Reader.idx === LAST ? 'end' : (bleedSrc && (bleedSrc.bleed || bleedSrc.gutter)) || 'black';
@@ -582,7 +588,8 @@ function hotspot(target, e) {
   const k = hot.dataset.hot;
   if (k === 'ollie') { foundOllie(hot); return true; }
   if (k === 'heal') { healBalloon(hot); return true; }
-  return true; // holds and drags handle themselves
+  if (k === 'drag') return false; // an unmoved press on a drag area is an ordinary tap
+  return true; // holds handle themselves
 }
 
 let _down = null, _lastTap = 0, _tapTimer = 0, _idle = 0;
@@ -602,7 +609,8 @@ function bindInput() {
     wakeUI();
     const d = _down;
     _down = null;
-    if (!d || Reader.dragging) return;
+    // a real drag is its own gesture; a tap on a drag area still turns the page
+    if (!d || (Reader.dragging && Reader.dragMoved)) return;
     if (e.target.closest && e.target.closest('.leaf-checkin, .leaf-end, input, button, a, label')) return;
     const dx = e.clientX - d.x, dy = e.clientY - d.y, dt = Date.now() - d.t;
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4 && dt < 800) { dx < 0 ? next() : prev(); return; }

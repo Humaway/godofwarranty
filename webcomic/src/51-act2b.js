@@ -478,7 +478,7 @@ page(15, {
       let down = null;
       const mv = (e) => {
         if (!down) return;
-        if (!down.moved && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 10) { down.moved = true; Reader.dragging = true; }
+        if (!down.moved && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 10) { down.moved = true; Reader.dragging = true; Reader.dragMoved = true; }
         if (down.moved) { lastInput = Date.now(); const [x, y] = ctx.toPage(e.clientX, e.clientY); put(x, y); }
       };
       const up = () => { if (down && down.moved) setTimeout(() => { Reader.dragging = false; }, 0); down = null; };

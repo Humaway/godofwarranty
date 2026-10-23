@@ -111,9 +111,10 @@ function queueTV(x, y, w, h, o = {}) {
   s += R(x, y, w, h, lit, `rx="2"${o.dark ? '' : ' class="lit"'}`);
   if (!o.dark) {
     s += Tx(x + w / 2, y + h * 0.24, o.label || 'NOW SERVING', h * 0.15, C.ink, 'text-anchor="middle" letter-spacing="2"', FONTS.ui);
-    s += `<text class="ft-m ${o.numCls || ''}" x="${n(x + w / 2)}" y="${n(y + h * (o.name ? 0.68 : 0.8))}" font-size="${n(h * (o.name ? 0.48 : 0.6))}" fill="${C.ink}" text-anchor="middle">${esc(o.num || '00')}</text>`;
-    if (o.name) s += Tx(x + w / 2, y + h * 0.88, o.name, h * 0.13, C.ink, 'text-anchor="middle" letter-spacing="1"', FONTS.ui);
-    if (o.sub) s += Tx(x + w / 2, y + h * 0.95, o.sub, h * 0.08, '#4A3A00', 'text-anchor="middle"', FONTS.ui);
+    const both = o.name && o.sub;
+    s += `<text class="ft-m ${o.numCls || ''}" x="${n(x + w / 2)}" y="${n(y + h * (both ? 0.6 : o.name || o.sub ? 0.68 : 0.8))}" font-size="${n(h * (both ? 0.4 : o.name || o.sub ? 0.48 : 0.6))}" fill="${C.ink}" text-anchor="middle">${esc(o.num || '00')}</text>`;
+    if (o.name) s += Tx(x + w / 2, y + h * (both ? 0.76 : 0.88), o.name, h * (both ? 0.11 : 0.13), C.ink, 'text-anchor="middle" letter-spacing="1"', FONTS.ui);
+    if (o.sub) s += Tx(x + w / 2, y + h * (both ? 0.9 : 0.92), o.sub, h * 0.08, '#4A3A00', 'text-anchor="middle"', FONTS.ui);
     if (o.glow !== false) s = glow(x + w / 2, y + h / 2, w * 0.9, h * 0.9, 'gY', 0.35) + s;
   }
   return `<g class="qtv ${o.cls || ''}">${s}</g>`;
