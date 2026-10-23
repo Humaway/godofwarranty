@@ -14,7 +14,7 @@ const Bus = {
 
 const Reader = {
   idx: 0, stop: 0, mode: null, full: false, leaves: [], vb: null, lockUntil: 0, dragging: false,
-  hiddenTitle: null, titleBase: 'SOS ONLY — Optus Redcliffe',
+  hiddenTitle: null, titleBase: 'SOS ONLY — Optus Redcliffe', revisitMemo: {},
   sess: { start: Date.now(), leftAt: null, awayCount: 0 },
 };
 
@@ -279,7 +279,10 @@ function mountLeaf(i, side, o) {
   if (kind === 'page') {
     const P = PAGES[i];
     if (!P) { el.innerHTML = `<div class="missing">Page ${i}<br>Please hold…</div>`; Reader.leaves.push(L); return L; }
-    const env = { mode: Reader.mode, revisit: Save.d.pagesSeen.includes(i) };
+    // a re-render of the same view (late fonts, motion setting) keeps the page's revisit state
+    const revisit = o.rerender && i in Reader.revisitMemo ? Reader.revisitMemo[i] : Save.d.pagesSeen.includes(i);
+    Reader.revisitMemo[i] = revisit;
+    const env = { mode: Reader.mode, revisit };
     const { svg, pg } = renderPage(i, env);
     el.innerHTML = svg;
     L.svg = el.firstElementChild;
@@ -380,7 +383,7 @@ function setMode(m, o = {}) {
   Reader.mode = m;
   Reader.vb = null;
   sizeBook();
-  show({ fromMode: from, fromVB, fromFocus, fromLeaf: Reader.idx, noEnter: !!fromVB });
+  show({ fromMode: from, fromVB, fromFocus, fromLeaf: Reader.idx, noEnter: !!fromVB, rerender: true });
   Bus.emit('layoutChange', { from, to: m });
 }
 
@@ -459,6 +462,8 @@ function chrome() {
   const snd = (P && P.sound) || (last === 0 ? {} : last === LAST ? { hold: true } : {});
   Sound.bed(snd);
   renderTranscript();
+  // announce the page to screen readers
+  $('#sr').textContent = ids.map((i) => (i === 0 ? 'Check-in' : i === LAST ? 'End screen' : PAGES[i] ? `Page ${i}: ${PAGES[i].title}. ${PAGES[i].alt || ''}` : `Page ${i}`)).join(' ');
   debugInfo();
 }
 
@@ -517,7 +522,7 @@ function openMenu(open = true) {
       if (k === 'motion') applyMotion();
       if (k === 'transcript') renderTranscript();
       if (k === 'mode') setMode(pickMode(), { force: true });
-      if (k === 'motion') show({ noEnter: true });
+      if (k === 'motion') show({ noEnter: true, rerender: true });
       openMenu(true);
     };
   });
@@ -707,6 +712,6 @@ async function boot() {
   // the progress line doubles as a call-duration readout
   setInterval(() => { if (Save.d.readStart) $('#ptime').textContent = fmtDur(Date.now() - Save.d.readStart).replace(/^00:/, ''); }, 1000);
   // fonts that arrive late change text widths; re-measure and redraw once
-  if (document.fonts) document.fonts.addEventListener('loadingdone', () => { _mcache.clear(); if (Reader.idx > 0) show({ noEnter: true }); }, { once: true });
+  if (document.fonts) document.fonts.addEventListener('loadingdone', () => { _mcache.clear(); if (Reader.idx > 0) show({ noEnter: true, rerender: true }); }, { once: true });
   if (matchMedia) matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change', applyMotion);
 }

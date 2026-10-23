@@ -565,7 +565,7 @@ function ticketProp(x, y, o = {}) {
   t += Tx(w / 2, 22, 'OPTUS REDCLIFFE', 11, '#555', 'text-anchor="middle" letter-spacing="1"', FONTS.mono);
   t += Tx(w / 2, 40, 'YOUR NUMBER', 13, '#333', 'text-anchor="middle"', FONTS.mono);
   t += Tx(w / 2, 104, o.num || '07', 70, C.ink, 'text-anchor="middle"', FONTS.mono);
-  if (o.name) t += Tx(w / 2, 132, o.name, o.nameSize || 17, C.ink, `text-anchor="middle"${o.nameCls ? ` class="${o.nameCls}"` : ''}`, FONTS.mono);
+  if (o.name) t += `<g${o.nameCls ? ` class="${o.nameCls}"` : ''}>${Tx(w / 2, 132, o.name, o.nameSize || 17, C.ink, 'text-anchor="middle"', FONTS.mono)}</g>`;
   (o.lines || []).forEach((l, i) => { t += Tx(w / 2, 150 + i * 13, l, 11, '#444', 'text-anchor="middle"', FONTS.mono); });
   return `<g transform="translate(${n(x)} ${n(y)}) rotate(${o.r || 0}) scale(${s})"${o.cls ? ` class="${o.cls}"` : ''}>${t}</g>`;
 }

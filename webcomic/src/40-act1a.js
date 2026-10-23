@@ -11,23 +11,28 @@ function p1Wide(pg, box, gone) {
     ollie: (bl, bt, bw, bh) => ollie({ x: bl + bw * 0.8, y: bt + bh * 0.99, s: bh / 560, back: !gone, dark: true, flip: false, turn: gone ? -1 : 0 }),
   });
   // a pool of light where Jarrad works
-  s += glow(x + w * 0.2, y + h * 0.78, w * 0.2, h * 0.16, 'gW', 0.18);
-  const jx = x + w * 0.19, jy = y + h * 0.83;
+  s += glow(x + w * 0.23, y + h * 0.68, w * 0.2, h * 0.16, 'gW', 0.18);
+  const jx = x + w * 0.24, jy = y + h * 0.71;
   if (!gone) {
     const out = {};
     s += fig('jarrad', { x: jx, y: jy, s: 0.42, pose: 'kneel', flip: true, add: ['scanner'], face: 'talk', light: 'top', so: 0.5, out });
-    s += `<line class="fx-sweep" style="transform-origin:${n(out.nh[0])}px ${n(out.nh[1])}px" x1="${n(out.nh[0] - 8)}" y1="${n(out.nh[1] - 4)}" x2="${n(x + w * 0.04)}" y2="${n(y + h * 0.62)}" stroke="${C.laser}" stroke-width="1.6" opacity=".85"/>`;
+    s += `<line class="fx-sweep" style="transform-origin:${n(out.nh[0])}px ${n(out.nh[1])}px" x1="${n(out.nh[0] - 8)}" y1="${n(out.nh[1] - 4)}" x2="${n(x + w * 0.06)}" y2="${n(y + h * 0.5)}" stroke="${C.laser}" stroke-width="1.6" opacity=".85"/>`;
   } else {
     // the scanner on the floor, laser still on, pointing at nothing; the keyring on the tiles
     const sx = jx - 6, sy = jy - 4;
     s += `<g transform="translate(${n(sx)} ${n(sy)}) rotate(14) scale(.8)">${Pa('M-6 -6 L26 -10 L30 0 L4 6 L2 22 L-8 22 Z', '#3A3C42', st(C.ink, 3))}${R(26, -9, 4, 8, C.laser)}</g>`;
-    s += `<line class="fx-sweep" style="transform-origin:${n(sx + 16)}px ${n(sy + 2)}px" x1="${n(sx + 16)}" y1="${n(sy + 2)}" x2="${n(sx + 260)}" y2="${n(sy + 40)}" stroke="${C.laser}" stroke-width="1.6" opacity=".8"/>`;
-    s += glow(sx + 120, sy + 22, 120, 10, 'gR', 0.35);
-    s += `<g transform="translate(${n(jx + 60)} ${n(jy + 4)}) scale(1.1)">${Ci(0, 0, 8, '#FFFFFF', st(C.ink, 2))}${Pa('M-7 -3Q0 2 7 -3M-5 5Q0 -2 2 -8', 'none', st('#1E5AA8', 1.4))}${Ln(6, -6, 16, -14, '#9AA0A6', 2)}</g>`;
+    s += `<g class="fx-sweep" style="transform-origin:${n(sx + 16)}px ${n(sy + 2)}px"><line x1="${n(sx + 16)}" y1="${n(sy + 2)}" x2="${n(sx + 300)}" y2="${n(sy + 22)}" stroke="${C.laser}" stroke-width="2.8"/>${glow(sx + 300, sy + 22, 22, 9, 'gR', 0.9)}</g>`;
+    s += glow(sx + 160, sy + 22, 170, 14, 'gR', 0.45);
+    s += `<g transform="translate(${n(jx + 60)} ${n(jy + 4)}) scale(1.7)">${Ci(0, 0, 8, '#FFFFFF', st(C.ink, 2))}${Pa('M-7 -3Q0 2 7 -3M-5 5Q0 -2 2 -8', 'none', st('#1E5AA8', 1.4))}${Ln(6, -6, 16, -14, '#9AA0A6', 2)}</g>`;
   }
   // foreground: the counter, from behind
   s += counterFore(box, { y: y + h * 0.84, tilt: -6, dark: true });
   s += R(x + w * 0.08, y + h * 0.76, 70, 40, '#22252B', `rx="4" ${st(C.ink, 2.5)}`) + R(x + w * 0.08 + 8, y + h * 0.76 + 6, 54, 16, '#3B4A3C');
+  // stocktake clutter on the counter: a tub, a stack of handset boxes, the scanner cradle
+  const cy = y + h * 0.84;
+  s += R(x + w * 0.78, cy - 46, 110, 50, '#22416B', st(C.ink, 3)) + R(x + w * 0.78, cy - 46, 110, 10, '#2E5687', st(C.ink, 2));
+  s += handsetBox(x + w * 0.36, cy - 40, 46, 38, { col: '#9A978E' }) + handsetBox(x + w * 0.36 + 6, cy - 72, 40, 32, { col: '#A5A299' }) + handsetBox(x + w * 0.42, cy - 34, 40, 32, { col: '#8F8C84' });
+  s += R(x + w * 0.5, cy - 18, 40, 18, '#2A2C31', `rx="4" ${st(C.ink, 2)}`) + glow(x + w * 0.5 + 20, cy - 6, 22, 6, 'gR', 0.6);
   if (gone) {
     // the demo phone, face-up on the counter, showing a call that never ends
     const px = x + w * 0.56, py = y + h * 0.86;
@@ -334,7 +339,7 @@ page(3, {
     b += fig('luka', { x: B[0] + 40, y: B[1] + 470, s: 1.15, pose: 'point', face: 'neutral', props: ['lanyard'], arms: { na: [80, 70] }, light: 'side', so: 0.5 });
     heads.forEach((h, i) => { b += `<g class="pop-n" style="--n:${i}">${Ci(h[0], h[1] - 48, 17, C.y, st(C.ink, 3))}${Tx(h[0], h[1] - 40, String(i + 1), 24, C.ink, 'text-anchor="middle"', FONTS.sfx)}</g>`; });
     s += pg.panel('b', B, b, { desc: 'Luka points around the group, counting. A number pops up over each head.' });
-    s += pg.say({ p: 'b', x: 190, y: 672, text: 'One, two, three, four, five—', who: 'LUKA', tail: [100, 790], w: 220 });
+    s += pg.say({ p: 'b', x: 200, y: 664, text: 'One, two, three, four, five—', who: 'LUKA', tail: [96, 780], w: 300, size: 26 });
 
     // panel 3: "six. Good." — and Ollie, by the door
     let c = R(Cc[0], Cc[1], Cc[2], Cc[3], '#E9E6DE');

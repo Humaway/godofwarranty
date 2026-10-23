@@ -319,7 +319,7 @@ function makePG(page, env) {
     const type = o.type || 'speech';
     const size = o.size || ({ whisper: 25, tiny: 21, entity: 28 }[type] || 29);
     const raw = String(o.text || '');
-    const text = raw.toUpperCase();
+    const text = o.lower ? raw : raw.toUpperCase();
     const ls = type === 'entity' ? 1.5 : 0;
     const L = size * 1.06;
     const T = textW(text, size, FONTS.speech, ls);
