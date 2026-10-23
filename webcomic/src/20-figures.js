@@ -114,7 +114,7 @@ function hairParts(hs, view, col) {
     if (hs === 'curly') front = curls([[-14, -20, 12], [0, -26, 12], [14, -20, 12], [-19, -4, 11], [19, -4, 11], [-12, 10, 11], [12, 10, 11], [0, 0, 13], [0, 14, 10]]);
     if (hs === 'pony') front += p('M-6 -14 C-12 10 -8 40 0 62 C8 40 12 10 6 -14 Z') + E(0, -14, 6, 4, C.y, ow);
     if (hs === 'long') front += p('M-24 -10 C-30 20 -30 50 -26 74 L26 74 C30 50 30 20 24 -10 C10 -2 -10 -2 -24 -10 Z');
-    if (capRim) front = p('M-23 6 C-26 -24 -10 -34 0 -34 C12 -34 26 -24 23 6 C10 0 -10 0 -23 6 Z', '#1D1F24') + p('M-16 4 C-12 18 12 18 16 4 Z', '#1D1F24') + R(-4, -6, 8, 6, C.y, ow);
+    if (capRim) front = E(0, -2, 23, 28, col, ow) + p('M-23 6 C-26 -24 -10 -34 0 -34 C12 -34 26 -24 23 6 C10 0 -10 0 -23 6 Z', '#1D1F24') + p('M-16 4 C-12 18 12 18 16 4 Z', '#1D1F24') + R(-4, -6, 8, 6, C.y, ow);
     if (hs === 'buzz') front += Pa('M-23 -10 C-10 -4 10 -4 23 -10 L23 -5 C10 1 -10 1 -23 -5 Z', '#1A1A1A', ow);
     if (hs === 'side') front = E(0, -2, 23, 28, col, ow) + Pa('M-12 -24 C-4 -18 4 -16 12 -18', 'none', st(shade(col, -0.25), 1.5));
     return { back, front };
@@ -584,7 +584,7 @@ function readerFig(o = {}) {
   g += Pa('M-58 -240 C-80 -190 -60 -160 -24 -168 M58 -240 C80 -190 60 -160 24 -168', 'none', st(C.ink, 22));
   // under-light on chin, cheeks and hands
   const dy = dev === 'laptop' ? -150 : -172;
-  g += `<g class="lit">${E(0, -296, 26, 12, C.screen, 'opacity=".22"')}${E(-18, dy + 8, 14, 9, '#C8E6F0', 'opacity=".35"')}${E(18, dy + 8, 14, 9, '#C8E6F0', 'opacity=".35"')}</g>`;
+  g += `<g class="lit">${glow(0, -300, 30, 24, 'gS', 0.32)}${glow(-18, dy + 8, 18, 12, 'gS', 0.45)}${glow(18, dy + 8, 18, 12, 'gS', 0.45)}</g>`;
   g = glow(0, dy - 40, 120, 150, 'gS', 0.35) + g;
   // the device
   if (dev === 'laptop') g += `<g class="lit">${Po([[-70, -150], [70, -150], [86, -132], [-86, -132]], '#8E949C', st(C.ink, 2))}${R(-64, -246, 128, 96, '#1A1F26', st(C.ink, 3))}${R(-58, -240, 116, 84, C.screen, 'opacity=".9"')}</g>`;

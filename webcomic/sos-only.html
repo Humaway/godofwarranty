@@ -262,7 +262,7 @@ button { font: inherit; color: inherit; }
 .tb-store { font-weight: 600; opacity: 0.8; }
 .tb-clock { margin-left: auto; font-family: var(--f-mono); font-size: 1.2em; font-weight: 400; }
 .tb-body { flex: 1; padding: calc(var(--u) * 30) calc(var(--u) * 46) calc(var(--u) * 10); display: flex; flex-direction: column; gap: calc(var(--u) * 20); overflow: auto; -webkit-user-select: text; user-select: text; }
-.tb-body h1 { font: 800 1.6em/1.1 var(--f-ui); margin: calc(var(--u) * 10) 0 0; }
+.tb-body h1 { font: 800 1.6em/1.1 var(--f-ui); margin: calc(var(--u) * 10) 0 0; overflow-wrap: anywhere; }
 .tb-body .sub { margin: 0; color: #444; font-size: 1.02em; }
 .f-name { display: flex; flex-direction: column; gap: calc(var(--u) * 8); font-weight: 700; }
 .f-name i { font-weight: 400; color: #666; font-style: normal; }
@@ -746,7 +746,7 @@ function makePG(page, env) {
     id: page.id, num: page.num, page, env,
     mode: env.mode, revisit: env.revisit, visits: Save.d.visits, second: Save.d.finished || Save.d.visits > 1,
     rnd: rng(page.id),
-    panels: [], lines: [], bbox: {}, bal: 0,
+    panels: [], lines: [], bbox: {}, bls: [], bal: 0,
   };
 
   const grow = (p, box) => {
@@ -826,7 +826,8 @@ function makePG(page, env) {
         bw *= 1.35; bh *= 1.35;
       } else {
         const el = E(x, y, rx, ry, fill);
-        shape = `<g ${st(line, outline, dash)}>${el}${tail}</g><g>${el}${tail}</g>`;
+        const ring = type === 'whisper' ? `<g ${st('#F4F1E8', outline + 5)}>${el}${tail}</g>` : '';
+        shape = `${ring}<g ${st(line, outline, dash)}>${el}${tail}</g><g>${el}${tail}</g>`;
       }
     }
     let txt = '';
@@ -837,8 +838,9 @@ function makePG(page, env) {
       } else txt = textLines(lines, x, y, size, tcol, { ls, lh: 1.06 });
     }
     grow(o.p, [x - bw / 2, y - bh / 2, bw, bh]);
+    pg.bls.push({ p: o.p, box: [x - bw / 2, y - bh / 2, bw, bh] });
     const tf = o.r ? ` transform="rotate(${o.r} ${n(x)} ${n(y)})"` : '';
-    return `<g class="bl${o.rot ? ' bl-rot' : ''} ${o.cls || ''}" data-p="${o.p}" style="--i:${i}"${o.rot ? ' data-hot="heal"' : ''}${tf}>${shape}${txt}</g>`;
+    return `<g class="bl${o.rot ? ' bl-rot' : ''} ${o.cls || ''}" data-p="${o.p}" data-c="${n(x)},${n(y)}" style="--i:${i}"${o.rot ? ' data-hot="heal"' : ''}${tf}>${shape}${txt}</g>`;
   };
 
   // Caption box, top-left anchored. styles: yellow · paper · black · entity · memory
@@ -864,8 +866,9 @@ function makePG(page, env) {
     lines.forEach((l, k) => { t += `<tspan x="${n(x + padX)}" y="${n(ty + k * size * 1.15)}">${o.rotAmt ? rotString(l, o.rotAmt, `${pg.id}cr${i}${k}`) : esc(l)}</tspan>`; });
     t += '</text>';
     grow(o.p, [x, y, w, h]);
+    pg.bls.push({ p: o.p, box: [x, y, w, h] });
     const tf = o.r ? ` transform="rotate(${o.r} ${n(x)} ${n(y)})"` : '';
-    return `<g class="bl cap ${o.cls || ''}" data-p="${o.p}" style="--i:${i}"${tf}>${box}${t}</g>`;
+    return `<g class="bl cap ${o.cls || ''}" data-p="${o.p}" data-c="${n(x + w / 2)},${n(y + h / 2)}" style="--i:${i}"${tf}>${box}${t}</g>`;
   };
 
   // Sound effect lettering, integrated into the art.
@@ -875,7 +878,7 @@ function makePG(page, env) {
     const base = `class="ft-x sfx ${o.cls || ''}" x="${n(x)}" y="${n(y)}" font-size="${n(size)}" text-anchor="${o.anchor || 'middle'}" letter-spacing="${o.ls == null ? 2 : o.ls}" transform="rotate(${rot} ${n(x)} ${n(y)})${o.skew ? ` skewX(${o.skew})` : ''}"`;
     const sw = o.sw == null ? Math.max(4, size * 0.14) : o.sw;
     const out = o.outer ? `<text ${base} fill="none" stroke="${o.outer}" stroke-width="${n(sw * 2.1)}" stroke-linejoin="round">${esc(text)}</text>` : '';
-    return `<g${o.op != null ? ` opacity="${o.op}"` : ''}${o.p ? ` class="bl" data-p="${o.p}" style="--i:${pg.bal++}"` : ''}>${out}<text ${base} fill="${o.fill || C.y}" stroke="${o.stroke || C.ink}" stroke-width="${n(sw)}" paint-order="stroke" stroke-linejoin="round">${esc(text)}</text></g>`;
+    return `<g${o.op != null ? ` opacity="${o.op}"` : ''}${o.p ? ` class="bl" data-p="${o.p}" data-c="${n(x)},${n(y)}" style="--i:${pg.bal++}"` : ''}>${out}<text ${base} fill="${o.fill || C.y}" stroke="${o.stroke || C.ink}" stroke-width="${n(sw)}" paint-order="stroke" stroke-linejoin="round">${esc(text)}</text></g>`;
   };
 
   // Describe a beat for the transcript without drawing anything.
@@ -1001,7 +1004,7 @@ function hairParts(hs, view, col) {
     if (hs === 'curly') front = curls([[-14, -20, 12], [0, -26, 12], [14, -20, 12], [-19, -4, 11], [19, -4, 11], [-12, 10, 11], [12, 10, 11], [0, 0, 13], [0, 14, 10]]);
     if (hs === 'pony') front += p('M-6 -14 C-12 10 -8 40 0 62 C8 40 12 10 6 -14 Z') + E(0, -14, 6, 4, C.y, ow);
     if (hs === 'long') front += p('M-24 -10 C-30 20 -30 50 -26 74 L26 74 C30 50 30 20 24 -10 C10 -2 -10 -2 -24 -10 Z');
-    if (capRim) front = p('M-23 6 C-26 -24 -10 -34 0 -34 C12 -34 26 -24 23 6 C10 0 -10 0 -23 6 Z', '#1D1F24') + p('M-16 4 C-12 18 12 18 16 4 Z', '#1D1F24') + R(-4, -6, 8, 6, C.y, ow);
+    if (capRim) front = E(0, -2, 23, 28, col, ow) + p('M-23 6 C-26 -24 -10 -34 0 -34 C12 -34 26 -24 23 6 C10 0 -10 0 -23 6 Z', '#1D1F24') + p('M-16 4 C-12 18 12 18 16 4 Z', '#1D1F24') + R(-4, -6, 8, 6, C.y, ow);
     if (hs === 'buzz') front += Pa('M-23 -10 C-10 -4 10 -4 23 -10 L23 -5 C10 1 -10 1 -23 -5 Z', '#1A1A1A', ow);
     if (hs === 'side') front = E(0, -2, 23, 28, col, ow) + Pa('M-12 -24 C-4 -18 4 -16 12 -18', 'none', st(shade(col, -0.25), 1.5));
     return { back, front };
@@ -1471,7 +1474,7 @@ function readerFig(o = {}) {
   g += Pa('M-58 -240 C-80 -190 -60 -160 -24 -168 M58 -240 C80 -190 60 -160 24 -168', 'none', st(C.ink, 22));
   // under-light on chin, cheeks and hands
   const dy = dev === 'laptop' ? -150 : -172;
-  g += `<g class="lit">${E(0, -296, 26, 12, C.screen, 'opacity=".22"')}${E(-18, dy + 8, 14, 9, '#C8E6F0', 'opacity=".35"')}${E(18, dy + 8, 14, 9, '#C8E6F0', 'opacity=".35"')}</g>`;
+  g += `<g class="lit">${glow(0, -300, 30, 24, 'gS', 0.32)}${glow(-18, dy + 8, 18, 12, 'gS', 0.45)}${glow(18, dy + 8, 18, 12, 'gS', 0.45)}</g>`;
   g = glow(0, dy - 40, 120, 150, 'gS', 0.35) + g;
   // the device
   if (dev === 'laptop') g += `<g class="lit">${Po([[-70, -150], [70, -150], [86, -132], [-86, -132]], '#8E949C', st(C.ink, 2))}${R(-64, -246, 128, 96, '#1A1F26', st(C.ink, 3))}${R(-58, -240, 116, 84, C.screen, 'opacity=".9"')}</g>`;
@@ -1704,10 +1707,11 @@ function cafe63(box, o = {}) {
   if (o.steam) s += `<g class="fx-steam">${Pa(`M${n(x + w * 0.77)} ${n(y + h * 0.37)}q-8 -14 0 -26q8 -12 0 -24`, 'none', st('#EEE', 3, 'opacity=".55"'))}${Pa(`M${n(x + w * 0.8)} ${n(y + h * 0.37)}q8 -12 0 -24q-6 -10 2 -22`, 'none', st('#EEE', 2.5, 'opacity=".45"'))}</g>`;
   if (o.order) s += R(x + w * 0.64, y + h * 0.2, w * 0.3, h * 0.1, '#0B0B0B', st('#444', 1.2)) + Tx(x + w * 0.79, y + h * 0.275, 'ORDER READY', h * 0.055, '#7CFF9A', 'text-anchor="middle" class="lit"', FONTS.mono);
   // tables and chairs
-  const tables = [[0.14, 0.78], [0.34, 0.84], [0.5, 0.74]];
+  const tables = [[0.1, 0.8], [0.27, 0.86], [0.43, 0.76], [0.56, 0.88]];
   tables.forEach(([tx, ty], i) => {
     const cx = x + w * tx, cy = y + h * ty;
-    if (o.full) s += customer({ x: cx + (i % 2 ? 22 : -22), y: cy + h * 0.16, s: h * 0.0011, kind: CUSTOMER_ORDER[(i + 2) % 8], seed: `cafe${i}`, flip: i % 2 === 0, ticket: false, faceOp: 0.85 });
+    // full: two Customers at every table, perfectly still, all turned toward the store
+    if (o.full) [-1, 1].forEach((side, k) => { s += customer({ x: cx + side * w * 0.045, y: cy + h * 0.13, s: h * 0.00105, kind: CUSTOMER_ORDER[(i * 2 + k + 2) % 8], seed: `cafe${i}${k}`, flip: side < 0, ticket: false, faceOp: 0.85, wet: false }); });
     s += E(cx, cy, w * 0.07, h * 0.02, '#5A4632', st(C.ink, 1.6)) + Ln(cx, cy, cx, cy + h * 0.14, '#222', 3);
     if (o.cups) s += R(cx - 5, cy - 12, 10, 11, '#F4F0E6', st(C.ink, 1.2)) + `<g class="fx-steam" style="animation-delay:${i * 0.4}s">${Pa(`M${n(cx)} ${n(cy - 14)}q-5 -8 0 -16q5 -8 0 -16`, 'none', st('#F2F2F2', 2, 'opacity=".6"'))}</g>`;
   });
@@ -2287,7 +2291,7 @@ page(3, {
     pg.stop('a3', second ? [450, 40, 510, 540] : [450, 40, 400, 540]);
     if (second) pg.stop('a4', [800, 150, 170, 440], { move: 'creep', hold: 1500, lock: 1500 });
     pg.desc(`Name tags: ${Object.values(TAGS).join(' · ')}`);
-    P3.forEach(([w, x], i) => { s += pg.cap({ p: x < 450 ? 'a2' : 'a3', x: x - 66, y: foot - (i % 2 ? 100 : 140), text: TAGS[w], w: 142, size: 16, who: false }); });
+    P3.forEach(([w, x], i) => { s += pg.cap({ p: x < 450 ? 'a2' : 'a3', x: x - 66, y: foot - (i % 2 ? 100 : 140), text: TAGS[w], w: 150, size: 19, who: false }); });
     s += pg.say({ p: 'a', x: 222, y: 128, w: 330, size: 26, text: 'Right. Roller door’s down, bridge is shut, nobody’s going anywhere till the count’s done.', who: 'LUKA', tail: [hd.luka[0] + 10, hd.luka[1] - 34] });
     s += pg.say({ p: 'a', x: 528, y: 100, w: 170, size: 27, text: 'Chat, we’re locked in. Stocky arc.', who: 'ZANE', tail: [hd.zane[0] + 10, hd.zane[1] - 34] });
     s += pg.say({ p: 'a', x: 132, y: 252, text: 'Stocky?', who: 'LUKA', tail: [hd.luka[0] + 4, hd.luka[1] - 30], size: 27 });
@@ -2749,7 +2753,12 @@ function pA_streamBar(x, y, w, o = {}) {
   g += R(x + 6 * k, y + 6 * k, 58 * k, 22 * k, '#E0262F', `rx="${4 * k}"`) + Ci(x + 16 * k, y + 17 * k, 4 * k, '#FFFFFF', 'class="fx-blink"');
   g += Tx(x + 24 * k, y + 23 * k, 'LIVE', 15 * k, '#FFFFFF', '', FONTS.ui);
   if (o.count) g += Tx(x + 72 * k, y + 23 * k, `◉ ${o.count}`, 15 * k, '#FFFFFF', `class="${o.countCls || ''}"`, FONTS.ui);
-  if (o.title !== false) g += Tx(x + (o.count ? 150 : 74) * k, y + 23 * k, o.title || 'NIGHTMARE ON 63RD STREET (NOT CLICKBAIT)', 14 * k, '#FFFFFF', 'letter-spacing="0.5"', FONTS.ui);
+  if (o.title !== false) {
+    const title = o.title || 'NIGHTMARE ON 63RD STREET (NOT CLICKBAIT)', tx = (o.count ? 150 : 74) * k;
+    // as big as the strip allows (it sets up a running joke), up to ~18 units
+    const fs = Math.min(17.5 * k, (w - tx - 10 * k) / (textW(title, 1, FONTS.ui) + 0.5 * title.length / 17.5));
+    g += Tx(x + tx, y + 18 * k + fs * 0.36, title, fs, '#FFFFFF', 'letter-spacing="0.5"', FONTS.ui);
+  }
   return g;
 }
 
@@ -3412,8 +3421,10 @@ page(10, {
     const rows = [];
     for (let i = 0; i < 14; i++) rows.push(i === 6 ? me : users[i % users.length]);
     const LH = 34;
+    // the reader's own row always fits, ': next' included, however long their name
+    const meFs = Math.min(21, (cc[2] - 26) / textW(`${me}: next`, 1, FONTS.ui));
     const one = rows.map((u, i) => (u === me ? R(cc[0] + 4, cc[1] + 8 + i * LH, cc[2] - 8, LH - 4, C.y, 'rx="4" opacity=".92"') : '') +
-      `<text class="ft-u" x="${cc[0] + 12}" y="${cc[1] + 32 + i * LH}" font-size="${u === me ? 21 : 19}" fill="${u === me ? C.ink : '#DDE3E8'}"><tspan font-weight="800">${esc(u)}</tspan><tspan fill="${u === me ? C.ink : '#FFFFFF'}" font-weight="${u === me ? 800 : 400}">: next</tspan></text>`).join('');
+      `<text class="ft-u" x="${cc[0] + 12}" y="${cc[1] + 32 + i * LH}" font-size="${n(u === me ? meFs : 19)}" fill="${u === me ? C.ink : '#DDE3E8'}"><tspan font-weight="800">${esc(u)}</tspan><tspan fill="${u === me ? C.ink : '#FFFFFF'}" font-weight="${u === me ? 800 : 400}">: next</tspan></text>`).join('');
     const list = `<g class="fx-scroll" style="--sd:12s;--sh:-${rows.length * LH}px">${one}<g transform="translate(0 ${rows.length * LH})">${one}</g></g>`;
     const ccid = uid('cc');
     b += `<clipPath id="${ccid}"><rect x="${cc[0]}" y="${cc[1]}" width="${cc[2]}" height="${cc[3]}"/></clipPath>${R(cc[0], cc[1], cc[2], cc[3], 'rgba(0,0,0,.4)', 'rx="8"')}<g clip-path="url(#${ccid})">${list}</g>`;
@@ -3884,7 +3895,8 @@ page(13, {
     // where a note typed live (the reader leaving the tab and coming back) would go; the rot leaves room for it
     b += `<g class="pB13-roth" data-y="${n(ny)}" data-k="${notes.length}" data-fs="${fs}" data-lh="${lh}" data-ah="${L.ah}"></g>`;
     b += rotPatch({ x: B[0] + B[2], y: B[1], box: [B[0] + B[2] - 210, B[1], 210, 96], reach: 120, count: 24, size: 15, seed: 'p13w0', grow: 4 });
-    s += pg.panel('b', B, b, { desc: 'Screen insert: the interaction notes, author ID JGAUNT, typing themselves in flat rep shorthand. Rot spreads across the window as each note lands.' });
+    // guided view holds on the notes until they have landed (they type faster there; see mount)
+    s += pg.panel('b', B, b, { desc: 'Screen insert: the interaction notes, author ID JGAUNT, typing themselves in flat rep shorthand. Rot spreads across the window as each note lands.', guided: [{ focus: B, lock: 6500 }] });
 
     // 3: the call record that never ends
     let c = R(Cc[0], Cc[1], Cc[2], Cc[3], '#C9D0D6') + R(Cc[0], Cc[1], Cc[2], 34, '#56606B') + Tx(Cc[0] + 12, Cc[1] + 24, 'CALL RECORD', 18, '#EEF2F5', '', FONTS.mono);
@@ -4003,6 +4015,8 @@ page(13, {
     lines.forEach((l) => { l.textContent = ''; });
     eLine.textContent = '';
     const r = rng('p13type');
+    // on a phone the reader taps on at a few seconds a stop, so the same human rhythm runs ~2.5x faster
+    const sp = ctx.mode === 'guided' ? 0.4 : 1;
     let li = 0, ci = 0, bDone = false, eStarted = false;
     const finishB = () => { if (bDone) return; bDone = true; lines.forEach((l, i) => { l.textContent = full[i]; land(+l.dataset.n); }); };
     // the notes type at an uneven, human speed: bursts, hesitations, a pause at each full stop
@@ -4016,12 +4030,12 @@ page(13, {
         const nn = +L.dataset.n;
         li++; ci = 0;
         const nxt = lines[li];
-        if (!nxt || +nxt.dataset.n !== nn) { land(nn); ctx.after(360 + r() * 360, typeB); }
-        else ctx.after(40, typeB);
+        if (!nxt || +nxt.dataset.n !== nn) { land(nn); ctx.after((360 + r() * 360) * sp, typeB); }
+        else ctx.after(40 * sp, typeB);
         return;
       }
       const ch = t[ci - 1];
-      ctx.after(ch === '.' || ch === ',' ? 110 + r() * 170 : ch === ' ' ? 16 + r() * 50 : 8 + r() * r() * 80, typeB);
+      ctx.after((ch === '.' || ch === ',' ? 110 + r() * 170 : ch === ' ' ? 16 + r() * 50 : 8 + r() * r() * 80) * sp, typeB);
     };
     // panel 5: the typo is what makes it a person
     const x0 = +eLine.getAttribute('x');
@@ -4046,7 +4060,9 @@ page(13, {
       ctx.after(ctx.mode === 'guided' ? 700 : 1400, step);
     };
     if (ctx.mode === 'guided') {
-      ctx.onPanel('b', () => ctx.after(500, typeB));
+      ctx.onPanel('b', () => ctx.after(400, typeB));
+      // moving on before the notes have landed lands them all, so nothing is left half-typed
+      ctx.onPanel('c', finishB);
       // reaching panel 5 finishes the notes at once (the reader has moved on) and starts the ghost typing
       ctx.onPanel('e', () => { finishB(); typeE(); });
     } else ctx.after(900, typeB);
@@ -4511,6 +4527,8 @@ page(16, {
     // the ticker
     s += `<g class="bl cap" data-p="a" style="--i:${pg.bal++}">${R(48, 1386, 340, 64, 'rgba(0,0,0,.35)')}${R(42, 1378, 340, 64, C.ink, st(C.y, 2))}<text class="ft-m pB16-tick" x="62" y="1422" font-size="30" fill="${C.y}">4,013 … 4,014 … 4,015</text></g>`;
     pg.lines.push({ who: 'CAPTION', text: '4,013 … 4,014 … 4,015' });
+    // §10: 13–18 the rot reaches the edges; on the splash it creeps in from the page edge, away from the reveal
+    s += pB_gutRot(392, 1446, 'p16g1', { reach: 60, count: 24, delay: 3 }) + pB_gutRot(1000, 1130, 'p16g2', { reach: 70, count: 26, delay: 5 }) + pB_gutRot(0, 330, 'p16g3', { reach: 55, count: 20, delay: 7 });
     // guided: one long, slow push down the aisle — first the voice, then the figure under the beam
     pg.stop('j', [150, 90, 740, 960], { move: 'creep', hold: 1500, lock: 1500 });
     pg.stop('k', [446, 380, 230, 380], { move: 'creep', lock: 1200 });
@@ -5192,9 +5210,9 @@ page(20, {
       guided: [{ focus: [Eb[0], Eb[1], 520, Eb[3]], move: 'cut' }, { focus: [Eb[0] + 400, Eb[1], 520, Eb[3]], move: 'glide' }],
     });
     s += `<g opacity=".3">${pg.say({ p: 'e', x: Eb[0] + 150, y: Eb[1] + 72, text: 'Luka it’s — it’s —', who: false, w: 170, size: 25 })}</g>`;
-    s += pg.say({ p: 'e', x: Eb[0] + 170, y: Eb[1] + 92, text: 'Luka it’s — it’s — it’s —', who: 'CHASE', w: 170, size: 25, tail: [cx0 - 40, Eb[1] + 110] });
+    s += pg.say({ p: 'e', x: Eb[0] + 170, y: Eb[1] + 92, text: 'Luka it’s — it’s — it’s —', who: 'CHASE', w: 170, size: 25, tail: [cx0 - 40, Eb[1] + 110], rot: 0.2 });
     s += `<g opacity=".3">${pg.say({ p: 'e', x: Eb[0] + 760, y: Eb[1] + 210, text: 'lying about the — the —', who: false, w: 210, size: 25 })}</g>`;
-    s += pg.say({ p: 'e', x: Eb[0] + 780, y: Eb[1] + 232, text: 'lying about the — the — the—', who: 'CHASE', w: 210, size: 25, tail: [cx0 + 260, Eb[1] + 150], rot: 0.18 });
+    s += pg.say({ p: 'e', x: Eb[0] + 780, y: Eb[1] + 232, text: 'lying about the — the — the—', who: 'CHASE', w: 210, size: 25, tail: [cx0 + 260, Eb[1] + 150] });
 
     // 6: the empty spot — headphones still playing, the laptop rotted through
     let f = R(F[0], F[1], F[2], F[3], '#0A0C10');
@@ -5395,6 +5413,8 @@ page(21, {
     s += pg.say({ p: 'f', x: F[0] + 418, y: F[1] + 102, type: 'elec', text: tf1, who: 'RUE', w: 290, size: 22, tail: [F[0] + 240, F[1] + 80] });
     s += pg.say({ p: 'f', x: F[0] + 742, y: F[1] + 84, text: 'And Chloe?', who: 'LUKA', w: 100, size: 25, tail: [okf.head[0] - 30, okf.head[1] - 14] });
     s += pg.say({ p: 'f', x: F[0] + 236, y: F[1] + 236, type: 'elec', text: tf3, who: 'RUE', w: 330, size: 25, tail: [F[0] + 130, F[1] + 162] });
+    // §10: 19–22 the rot is in the UI as well as the gutters — it doesn't let up on the town hall page
+    s += pC_gutterRot([[409, 760, 50, 24], [960, 627, 60, 26], [40, 269, 50, 22]], 'pC21gr', 9);
     return s;
   },
   mount(ctx) {
@@ -5859,9 +5879,10 @@ page(25, {
     });
     s += pg.say({ p: 'c', x: Cc[0] + 846, y: Cc[1] + 60, text: 'Hi! Welcome\nto Optus.', who: 'CHLOE', w: 180, size: 24, tail: [och.mouth[0] + 4, och.mouth[1] - 30] });
     // guided view: the offer and the water pouring, then a slow push in on the six faces behind her
-    pg.stop('cW', [Cc[0] + 60, Cc[1] + 80, 610, 350]);
-    pg.stop('cF', [WL[0] - 10, WL[1] - 8, WL[2] + 6, WL[3] + 16], { move: 'creep' });
-    s += pg.say({ p: 'cW', x: Cc[0] + 440, y: Cc[1] + 382, text: 'Can I get you a water\nwhile you wait?', who: 'CHLOE', w: 320, size: 24, tail: [och.mouth[0] - 10, och.mouth[1] + 26], bend: 0.1 });
+    // (the offer is framed with Chloe in it, so the line has a visible speaker on a phone)
+    pg.stop('cW', [Cc[0] + 420, Cc[1] + 70, 500, 360]);
+    pg.stop('cF', [WL[0] - 10, WL[1] - 8, WL[2] - 46, WL[3] + 16], { move: 'creep' });
+    s += pg.say({ p: 'cW', x: Cc[0] + 620, y: Cc[1] + 384, text: 'Can I get you a water\nwhile you wait?', who: 'CHLOE', w: 320, size: 24, tail: [och.mouth[0] - 10, och.mouth[1] + 26], bend: 0.1 });
 
     // 4: she serves. The Customer is gone — a puddle and a sodden, unreadable ticket. NOW SERVING 07
     let d = R(D[0], D[1], D[2], D[3], '#07090C') + R(D[0], D[1] + 150, D[2], 70, '#1A1D22', st(C.ink, 3));
@@ -6003,7 +6024,7 @@ page(26, {
     a += `<g class="pC-glowm"><g class="pC-sflick">${glow(480, dcy, 260, 230, 'gS', 0.55)}</g></g>`;
     // the ticket in your other hand, held up to the counter
     const tkx = 480 + 84 * rs, tky = ry - 306 * rs;
-    a += `<g transform="translate(${n(tkx)} ${n(tky)}) rotate(9)">${ticketProp(-40, -132, { num: '07', name: `07 — ${NAME()}`.slice(0, 16), nameSize: 15, s: 0.68 })}</g>`;
+    a += `<g transform="translate(${n(tkx)} ${n(tky)}) rotate(9)">${ticketProp(-40, -132, { num: '07', name: `07 — ${NAME()}`, nameSize: Math.min(15, 106 / textW(`07 — ${NAME()}`, 1, FONTS.mono)), s: 0.68 })}</g>`;
     a += pC_you(480, ry, rs, dev);
     // linger and the rot gets out of your screen, over the bezel and onto your fingers
     const rw = DV[2] * rs + 70, rh = DV[3] * rs + 60;
@@ -6413,7 +6434,7 @@ function renderPage(num, env) {
     body +
     `<rect width="1000" height="1500" fill="url(#grain)" opacity="${P.gutter === 'black' ? 0.35 : 0.6}" pointer-events="none"/>` +
     `<text class="ft-x folio" x="${P.side === 'left' ? 34 : 966}" y="1490" font-size="20" fill="${folioCol}" text-anchor="middle">${num}</text>` +
-    `<path class="gmask" fill="${C.ink}" fill-rule="evenodd" d="" pointer-events="none"/>` +
+    `<path class="gmask" fill="${{ white: C.paper, warm: '#FFF4E0', whitegrey: C.gutterGrey, grey: C.gutterGrey }[P.gutter] || C.ink}" fill-rule="evenodd" d="" pointer-events="none"/>` +
     `</svg>`;
   return { svg, pg };
 }
@@ -6460,29 +6481,51 @@ function animateVB(svg, from, to, dur, mask) {
 
 const MOVE_MS = { cut: 0, glide: 380, creep: 1500, unfold: 1200 };
 
+const inBox = (f, c) => c[0] >= f[0] && c[0] <= f[0] + f[2] && c[1] >= f[1] && c[1] <= f[1] + f[3];
+
 function buildStops(pg) {
   const out = [];
   const [W, H] = leafSize();
   for (const p of pg.panels) {
     const b = pg.bbox[p.id] || p.box;
     if (p.guided) { p.guided.forEach((g) => out.push(Object.assign({ p: p.id, move: 'glide' }, g, { focus: g.focus || b }))); continue; }
-    // split wide panels so lettering stays at least ~13 CSS px
+    // split wide panels so lettering stays at least ~14 CSS px
     const [x, y, w, h] = b;
     const sc = Math.min(W / (w + 28), H / (h + 28));
     const k = Math.min(3, Math.max(1, Math.ceil(0.54 / sc - 0.05)));
     if (k === 1 || w < h * 0.9) { out.push({ p: p.id, focus: b, move: 'glide' }); continue; }
     const seg = w / k;
-    for (let i = 0; i < k; i++) out.push({ p: p.id, focus: [x + seg * i - (i ? seg * 0.08 : 0), y, seg * (i ? 1.08 : 1.04), h], move: 'glide' });
+    const segs = [];
+    for (let i = 0; i < k; i++) { const x0 = x + seg * i - (i ? seg * 0.08 : 0); segs.push([x0, x0 + seg * (i ? 1.08 : 1.04)]); }
+    // never cut a balloon in half: widen the segment that holds its centre to take all of it
+    for (const bl of pg.bls.filter((q) => q.p === p.id)) {
+      const cx = bl.box[0] + bl.box[2] / 2;
+      const sg = segs.find((q) => cx >= q[0] && cx <= q[1]) || segs[0];
+      sg[0] = Math.max(x, Math.min(sg[0], bl.box[0] - 8));
+      sg[1] = Math.min(x + w, Math.max(sg[1], bl.box[0] + bl.box[2] + 8));
+    }
+    segs.forEach((sg) => out.push({ p: p.id, focus: [sg[0], y, sg[1] - sg[0], h], move: 'glide' }));
   }
   return out;
 }
 
+// Balloons appear as the reader reaches them: when a stop that frames a balloon is shown, or when its
+// panel is finished. A balloon outside every stop of its panel appears with the panel's first stop.
 function revealBalloons(L, upto) {
-  const ids = [];
-  for (const s of L.stops.slice(0, upto + 1)) if (!ids.includes(s.p)) ids.push(s.p);
+  const stops = L.stops, first = {}, last = {};
+  stops.forEach((st2, i) => { if (!(st2.p in first)) first[st2.p] = i; last[st2.p] = i; });
   let j = 0;
   L.svg.querySelectorAll('.bl').forEach((b) => {
-    const on = ids.includes(b.dataset.p);
+    const p = b.dataset.p;
+    let on;
+    if (!(p in first)) on = upto >= stops.length - 1;
+    else if (last[p] <= upto) on = true;
+    else if (first[p] > upto) on = false;
+    else {
+      const c = b.dataset.c ? b.dataset.c.split(',').map(Number) : null;
+      const own = stops.filter((st2) => st2.p === p);
+      on = !c || !own.some((st2) => inBox(st2.focus, c)) || stops.slice(0, upto + 1).some((st2) => st2.p === p && inBox(st2.focus, c));
+    }
     if (on && !b.classList.contains('on')) { b.style.setProperty('--j', j++); b.classList.add('on'); }
     if (!on) b.classList.remove('on');
   });
@@ -6499,7 +6542,7 @@ function goStop(k, o = {}) {
   const from = o.from || Reader.vb;
   animateVB(L.svg, from, vb, o.move ? MOVE_MS[o.move] : MOVE_MS[s.move] ?? 380, s.focus.map((v, i) => v + (i < 2 ? -6 : 12)));
   revealBalloons(L, k);
-  if (s.lock) Reader.lockUntil = Date.now() + s.lock;
+  if (s.lock || s.hold) Reader.lockUntil = Date.now() + Math.max(s.lock || 0, s.hold || 0);
   if (!o.silent) L.ctx && L.ctx._panel(s.p);
   progress();
   debugInfo();
@@ -6519,6 +6562,17 @@ function guidedFull(on) {
 
 function makeCtx(i, el, svg, pg, o) {
   const timers = [], cleanups = [], panelCbs = {}, firedPanels = new Set();
+  // In spread mode the right-hand page mounts while the reader is still on the left one, so its timed
+  // beats wait until the reader gets there: the pointer reaches it, they touch it, or a reading-time
+  // estimate for the left page runs out.
+  let reached = !(Reader.mode === 'spread' && el.classList.contains('right') && o.leftChars != null);
+  const waiting = [];
+  const whenReached = (fn) => (reached ? fn() : waiting.push(fn));
+  const reach = () => {
+    if (reached || ctx.dead) return;
+    reached = true;
+    waiting.splice(0).forEach((f) => { try { f(); } catch (e) { console.error(e); } });
+  };
   const ctx = {
     num: i, el, svg, pg, mode: Reader.mode, dead: false,
     reduced: reducedMotion(), revisit: pg.revisit, visits: Save.d.visits, second: Save.d.finished || Save.d.visits > 1,
@@ -6530,15 +6584,20 @@ function makeCtx(i, el, svg, pg, o) {
     every(ms, fn) { const t = setInterval(() => !ctx.dead && fn(), ms); timers.push(() => clearInterval(t)); return t; },
     // fires after the reader has spent `ms` on the page with it visible (pauses when the tab is hidden)
     dwell(ms, fn) {
-      let acc = 0, last = performance.now();
-      const t = setInterval(() => {
-        const now = performance.now();
-        if (!document.hidden) acc += now - last;
-        last = now;
-        if (acc >= ms) { clearInterval(t); if (!ctx.dead) fn(); }
-      }, 200);
-      timers.push(() => clearInterval(t));
+      whenReached(() => {
+        let acc = 0, last = performance.now();
+        const t = setInterval(() => {
+          const now = performance.now();
+          if (!document.hidden) acc += now - last;
+          last = now;
+          if (acc >= ms) { clearInterval(t); if (!ctx.dead) fn(); }
+        }, 200);
+        timers.push(() => clearInterval(t));
+      });
     },
+    // true once the reader has reached this page (always true outside spread mode's right-hand page)
+    isReached: () => reached,
+    whenReached,
     raf(fn) {
       let id = 0;
       const loop = (t) => { if (ctx.dead || fn(t) === false) return; id = requestAnimationFrame(loop); };
@@ -6549,7 +6608,7 @@ function makeCtx(i, el, svg, pg, o) {
     // Run fn when panel p is reached: in guided view when its stop is shown, otherwise `delay` ms after mount.
     onPanel(p, fn, delay = 0) {
       if (Reader.mode === 'guided') (panelCbs[p] = panelCbs[p] || []).push(fn);
-      else ctx.after(delay, fn);
+      else whenReached(() => ctx.after(delay, fn));
     },
     _panel(p) { if (firedPanels.has(p)) return; firedPanels.add(p); (panelCbs[p] || []).forEach((f) => f()); },
     onTap(sel, fn) { ctx._taps.push([sel, fn]); },
@@ -6603,6 +6662,14 @@ function makeCtx(i, el, svg, pg, o) {
     onCleanup(fn) { cleanups.push(fn); },
     _cleanup() { ctx.dead = true; timers.forEach((f) => f()); cleanups.forEach((f) => f()); },
   };
+  if (!reached) {
+    const readMs = clamp(5000 + o.leftChars * 55, 7000, 25000);
+    ctx.after(readMs, reach);
+    ctx.on('pointer', (p) => { if (p.leaf === el) reach(); });
+    const down = () => reach();
+    el.addEventListener('pointerdown', down);
+    cleanups.push(() => el.removeEventListener('pointerdown', down));
+  }
   return ctx;
 }
 
@@ -6659,7 +6726,12 @@ function show(o = {}) {
   const ids = Reader.mode === 'spread' ? [Reader.idx - (Reader.idx % 2), Reader.idx - (Reader.idx % 2) + 1] : [Reader.idx];
   if (Reader.mode === 'spread') Reader.idx = ids[0];
   book.className = `mode-${Reader.mode}${o.turn ? ' turning' : ''}`;
-  ids.forEach((i, k) => mountLeaf(i, Reader.mode === 'spread' ? (k ? 'right' : 'left') : 'single', o));
+  ids.forEach((i, k) => {
+    const left = Reader.leaves[0];
+    // the right-hand page learns how much there is to read on the left one (see makeCtx)
+    const leftChars = Reader.mode === 'spread' && k === 1 && left && left.pg ? left.pg.lines.filter((l) => !l.desc).reduce((a, l) => a + String(l.text).length, 0) : null;
+    mountLeaf(i, Reader.mode === 'spread' ? (k ? 'right' : 'left') : 'single', leftChars == null ? o : Object.assign({}, o, { leftChars }));
+  });
   if (o.turn) setTimeout(() => book.classList.remove('turning'), 400);
 
   if (Reader.mode === 'guided') {
@@ -6942,7 +7014,8 @@ function hotspot(target, e) {
     const hot = el.closest && el.closest('[data-hot]');
     if (!hot) continue;
     const k = hot.dataset.hot;
-    if (k === 'drag') continue; // an unmoved press on a drag area is an ordinary tap
+    // an unmoved press on a drag area: in guided view it may fill the screen, so it still turns the page
+    if (k === 'drag') { if (Reader.mode === 'guided') continue; return true; }
     if (k === 'ollie') { foundOllie(hot); return true; }
     if (k === 'heal') { healBalloon(hot); return true; }
     return true; // holds handle themselves

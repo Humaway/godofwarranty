@@ -53,7 +53,12 @@ function pA_streamBar(x, y, w, o = {}) {
   g += R(x + 6 * k, y + 6 * k, 58 * k, 22 * k, '#E0262F', `rx="${4 * k}"`) + Ci(x + 16 * k, y + 17 * k, 4 * k, '#FFFFFF', 'class="fx-blink"');
   g += Tx(x + 24 * k, y + 23 * k, 'LIVE', 15 * k, '#FFFFFF', '', FONTS.ui);
   if (o.count) g += Tx(x + 72 * k, y + 23 * k, `◉ ${o.count}`, 15 * k, '#FFFFFF', `class="${o.countCls || ''}"`, FONTS.ui);
-  if (o.title !== false) g += Tx(x + (o.count ? 150 : 74) * k, y + 23 * k, o.title || 'NIGHTMARE ON 63RD STREET (NOT CLICKBAIT)', 14 * k, '#FFFFFF', 'letter-spacing="0.5"', FONTS.ui);
+  if (o.title !== false) {
+    const title = o.title || 'NIGHTMARE ON 63RD STREET (NOT CLICKBAIT)', tx = (o.count ? 150 : 74) * k;
+    // as big as the strip allows (it sets up a running joke), up to ~18 units
+    const fs = Math.min(17.5 * k, (w - tx - 10 * k) / (textW(title, 1, FONTS.ui) + 0.5 * title.length / 17.5));
+    g += Tx(x + tx, y + 18 * k + fs * 0.36, title, fs, '#FFFFFF', 'letter-spacing="0.5"', FONTS.ui);
+  }
   return g;
 }
 
@@ -716,8 +721,10 @@ page(10, {
     const rows = [];
     for (let i = 0; i < 14; i++) rows.push(i === 6 ? me : users[i % users.length]);
     const LH = 34;
+    // the reader's own row always fits, ': next' included, however long their name
+    const meFs = Math.min(21, (cc[2] - 26) / textW(`${me}: next`, 1, FONTS.ui));
     const one = rows.map((u, i) => (u === me ? R(cc[0] + 4, cc[1] + 8 + i * LH, cc[2] - 8, LH - 4, C.y, 'rx="4" opacity=".92"') : '') +
-      `<text class="ft-u" x="${cc[0] + 12}" y="${cc[1] + 32 + i * LH}" font-size="${u === me ? 21 : 19}" fill="${u === me ? C.ink : '#DDE3E8'}"><tspan font-weight="800">${esc(u)}</tspan><tspan fill="${u === me ? C.ink : '#FFFFFF'}" font-weight="${u === me ? 800 : 400}">: next</tspan></text>`).join('');
+      `<text class="ft-u" x="${cc[0] + 12}" y="${cc[1] + 32 + i * LH}" font-size="${n(u === me ? meFs : 19)}" fill="${u === me ? C.ink : '#DDE3E8'}"><tspan font-weight="800">${esc(u)}</tspan><tspan fill="${u === me ? C.ink : '#FFFFFF'}" font-weight="${u === me ? 800 : 400}">: next</tspan></text>`).join('');
     const list = `<g class="fx-scroll" style="--sd:12s;--sh:-${rows.length * LH}px">${one}<g transform="translate(0 ${rows.length * LH})">${one}</g></g>`;
     const ccid = uid('cc');
     b += `<clipPath id="${ccid}"><rect x="${cc[0]}" y="${cc[1]}" width="${cc[2]}" height="${cc[3]}"/></clipPath>${R(cc[0], cc[1], cc[2], cc[3], 'rgba(0,0,0,.4)', 'rx="8"')}<g clip-path="url(#${ccid})">${list}</g>`;

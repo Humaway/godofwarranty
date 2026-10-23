@@ -219,9 +219,9 @@ page(20, {
       guided: [{ focus: [Eb[0], Eb[1], 520, Eb[3]], move: 'cut' }, { focus: [Eb[0] + 400, Eb[1], 520, Eb[3]], move: 'glide' }],
     });
     s += `<g opacity=".3">${pg.say({ p: 'e', x: Eb[0] + 150, y: Eb[1] + 72, text: 'Luka it’s — it’s —', who: false, w: 170, size: 25 })}</g>`;
-    s += pg.say({ p: 'e', x: Eb[0] + 170, y: Eb[1] + 92, text: 'Luka it’s — it’s — it’s —', who: 'CHASE', w: 170, size: 25, tail: [cx0 - 40, Eb[1] + 110] });
+    s += pg.say({ p: 'e', x: Eb[0] + 170, y: Eb[1] + 92, text: 'Luka it’s — it’s — it’s —', who: 'CHASE', w: 170, size: 25, tail: [cx0 - 40, Eb[1] + 110], rot: 0.2 });
     s += `<g opacity=".3">${pg.say({ p: 'e', x: Eb[0] + 760, y: Eb[1] + 210, text: 'lying about the — the —', who: false, w: 210, size: 25 })}</g>`;
-    s += pg.say({ p: 'e', x: Eb[0] + 780, y: Eb[1] + 232, text: 'lying about the — the — the—', who: 'CHASE', w: 210, size: 25, tail: [cx0 + 260, Eb[1] + 150], rot: 0.18 });
+    s += pg.say({ p: 'e', x: Eb[0] + 780, y: Eb[1] + 232, text: 'lying about the — the — the—', who: 'CHASE', w: 210, size: 25, tail: [cx0 + 260, Eb[1] + 150] });
 
     // 6: the empty spot — headphones still playing, the laptop rotted through
     let f = R(F[0], F[1], F[2], F[3], '#0A0C10');
@@ -422,6 +422,8 @@ page(21, {
     s += pg.say({ p: 'f', x: F[0] + 418, y: F[1] + 102, type: 'elec', text: tf1, who: 'RUE', w: 290, size: 22, tail: [F[0] + 240, F[1] + 80] });
     s += pg.say({ p: 'f', x: F[0] + 742, y: F[1] + 84, text: 'And Chloe?', who: 'LUKA', w: 100, size: 25, tail: [okf.head[0] - 30, okf.head[1] - 14] });
     s += pg.say({ p: 'f', x: F[0] + 236, y: F[1] + 236, type: 'elec', text: tf3, who: 'RUE', w: 330, size: 25, tail: [F[0] + 130, F[1] + 162] });
+    // §10: 19–22 the rot is in the UI as well as the gutters — it doesn't let up on the town hall page
+    s += pC_gutterRot([[409, 760, 50, 24], [960, 627, 60, 26], [40, 269, 50, 22]], 'pC21gr', 9);
     return s;
   },
   mount(ctx) {
@@ -886,9 +888,10 @@ page(25, {
     });
     s += pg.say({ p: 'c', x: Cc[0] + 846, y: Cc[1] + 60, text: 'Hi! Welcome\nto Optus.', who: 'CHLOE', w: 180, size: 24, tail: [och.mouth[0] + 4, och.mouth[1] - 30] });
     // guided view: the offer and the water pouring, then a slow push in on the six faces behind her
-    pg.stop('cW', [Cc[0] + 60, Cc[1] + 80, 610, 350]);
-    pg.stop('cF', [WL[0] - 10, WL[1] - 8, WL[2] + 6, WL[3] + 16], { move: 'creep' });
-    s += pg.say({ p: 'cW', x: Cc[0] + 440, y: Cc[1] + 382, text: 'Can I get you a water\nwhile you wait?', who: 'CHLOE', w: 320, size: 24, tail: [och.mouth[0] - 10, och.mouth[1] + 26], bend: 0.1 });
+    // (the offer is framed with Chloe in it, so the line has a visible speaker on a phone)
+    pg.stop('cW', [Cc[0] + 420, Cc[1] + 70, 500, 360]);
+    pg.stop('cF', [WL[0] - 10, WL[1] - 8, WL[2] - 46, WL[3] + 16], { move: 'creep' });
+    s += pg.say({ p: 'cW', x: Cc[0] + 620, y: Cc[1] + 384, text: 'Can I get you a water\nwhile you wait?', who: 'CHLOE', w: 320, size: 24, tail: [och.mouth[0] - 10, och.mouth[1] + 26], bend: 0.1 });
 
     // 4: she serves. The Customer is gone — a puddle and a sodden, unreadable ticket. NOW SERVING 07
     let d = R(D[0], D[1], D[2], D[3], '#07090C') + R(D[0], D[1] + 150, D[2], 70, '#1A1D22', st(C.ink, 3));
@@ -1030,7 +1033,7 @@ page(26, {
     a += `<g class="pC-glowm"><g class="pC-sflick">${glow(480, dcy, 260, 230, 'gS', 0.55)}</g></g>`;
     // the ticket in your other hand, held up to the counter
     const tkx = 480 + 84 * rs, tky = ry - 306 * rs;
-    a += `<g transform="translate(${n(tkx)} ${n(tky)}) rotate(9)">${ticketProp(-40, -132, { num: '07', name: `07 — ${NAME()}`.slice(0, 16), nameSize: 15, s: 0.68 })}</g>`;
+    a += `<g transform="translate(${n(tkx)} ${n(tky)}) rotate(9)">${ticketProp(-40, -132, { num: '07', name: `07 — ${NAME()}`, nameSize: Math.min(15, 106 / textW(`07 — ${NAME()}`, 1, FONTS.mono)), s: 0.68 })}</g>`;
     a += pC_you(480, ry, rs, dev);
     // linger and the rot gets out of your screen, over the bezel and onto your fingers
     const rw = DV[2] * rs + 70, rh = DV[3] * rs + 60;

@@ -279,7 +279,7 @@ function makePG(page, env) {
     id: page.id, num: page.num, page, env,
     mode: env.mode, revisit: env.revisit, visits: Save.d.visits, second: Save.d.finished || Save.d.visits > 1,
     rnd: rng(page.id),
-    panels: [], lines: [], bbox: {}, bal: 0,
+    panels: [], lines: [], bbox: {}, bls: [], bal: 0,
   };
 
   const grow = (p, box) => {
@@ -359,7 +359,8 @@ function makePG(page, env) {
         bw *= 1.35; bh *= 1.35;
       } else {
         const el = E(x, y, rx, ry, fill);
-        shape = `<g ${st(line, outline, dash)}>${el}${tail}</g><g>${el}${tail}</g>`;
+        const ring = type === 'whisper' ? `<g ${st('#F4F1E8', outline + 5)}>${el}${tail}</g>` : '';
+        shape = `${ring}<g ${st(line, outline, dash)}>${el}${tail}</g><g>${el}${tail}</g>`;
       }
     }
     let txt = '';
@@ -370,8 +371,9 @@ function makePG(page, env) {
       } else txt = textLines(lines, x, y, size, tcol, { ls, lh: 1.06 });
     }
     grow(o.p, [x - bw / 2, y - bh / 2, bw, bh]);
+    pg.bls.push({ p: o.p, box: [x - bw / 2, y - bh / 2, bw, bh] });
     const tf = o.r ? ` transform="rotate(${o.r} ${n(x)} ${n(y)})"` : '';
-    return `<g class="bl${o.rot ? ' bl-rot' : ''} ${o.cls || ''}" data-p="${o.p}" style="--i:${i}"${o.rot ? ' data-hot="heal"' : ''}${tf}>${shape}${txt}</g>`;
+    return `<g class="bl${o.rot ? ' bl-rot' : ''} ${o.cls || ''}" data-p="${o.p}" data-c="${n(x)},${n(y)}" style="--i:${i}"${o.rot ? ' data-hot="heal"' : ''}${tf}>${shape}${txt}</g>`;
   };
 
   // Caption box, top-left anchored. styles: yellow · paper · black · entity · memory
@@ -397,8 +399,9 @@ function makePG(page, env) {
     lines.forEach((l, k) => { t += `<tspan x="${n(x + padX)}" y="${n(ty + k * size * 1.15)}">${o.rotAmt ? rotString(l, o.rotAmt, `${pg.id}cr${i}${k}`) : esc(l)}</tspan>`; });
     t += '</text>';
     grow(o.p, [x, y, w, h]);
+    pg.bls.push({ p: o.p, box: [x, y, w, h] });
     const tf = o.r ? ` transform="rotate(${o.r} ${n(x)} ${n(y)})"` : '';
-    return `<g class="bl cap ${o.cls || ''}" data-p="${o.p}" style="--i:${i}"${tf}>${box}${t}</g>`;
+    return `<g class="bl cap ${o.cls || ''}" data-p="${o.p}" data-c="${n(x + w / 2)},${n(y + h / 2)}" style="--i:${i}"${tf}>${box}${t}</g>`;
   };
 
   // Sound effect lettering, integrated into the art.
@@ -408,7 +411,7 @@ function makePG(page, env) {
     const base = `class="ft-x sfx ${o.cls || ''}" x="${n(x)}" y="${n(y)}" font-size="${n(size)}" text-anchor="${o.anchor || 'middle'}" letter-spacing="${o.ls == null ? 2 : o.ls}" transform="rotate(${rot} ${n(x)} ${n(y)})${o.skew ? ` skewX(${o.skew})` : ''}"`;
     const sw = o.sw == null ? Math.max(4, size * 0.14) : o.sw;
     const out = o.outer ? `<text ${base} fill="none" stroke="${o.outer}" stroke-width="${n(sw * 2.1)}" stroke-linejoin="round">${esc(text)}</text>` : '';
-    return `<g${o.op != null ? ` opacity="${o.op}"` : ''}${o.p ? ` class="bl" data-p="${o.p}" style="--i:${pg.bal++}"` : ''}>${out}<text ${base} fill="${o.fill || C.y}" stroke="${o.stroke || C.ink}" stroke-width="${n(sw)}" paint-order="stroke" stroke-linejoin="round">${esc(text)}</text></g>`;
+    return `<g${o.op != null ? ` opacity="${o.op}"` : ''}${o.p ? ` class="bl" data-p="${o.p}" data-c="${n(x)},${n(y)}" style="--i:${pg.bal++}"` : ''}>${out}<text ${base} fill="${o.fill || C.y}" stroke="${o.stroke || C.ink}" stroke-width="${n(sw)}" paint-order="stroke" stroke-linejoin="round">${esc(text)}</text></g>`;
   };
 
   // Describe a beat for the transcript without drawing anything.

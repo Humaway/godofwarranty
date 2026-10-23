@@ -366,7 +366,7 @@ page(3, {
     pg.stop('a3', second ? [450, 40, 510, 540] : [450, 40, 400, 540]);
     if (second) pg.stop('a4', [800, 150, 170, 440], { move: 'creep', hold: 1500, lock: 1500 });
     pg.desc(`Name tags: ${Object.values(TAGS).join(' · ')}`);
-    P3.forEach(([w, x], i) => { s += pg.cap({ p: x < 450 ? 'a2' : 'a3', x: x - 66, y: foot - (i % 2 ? 100 : 140), text: TAGS[w], w: 142, size: 16, who: false }); });
+    P3.forEach(([w, x], i) => { s += pg.cap({ p: x < 450 ? 'a2' : 'a3', x: x - 66, y: foot - (i % 2 ? 100 : 140), text: TAGS[w], w: 150, size: 19, who: false }); });
     s += pg.say({ p: 'a', x: 222, y: 128, w: 330, size: 26, text: 'Right. Roller door’s down, bridge is shut, nobody’s going anywhere till the count’s done.', who: 'LUKA', tail: [hd.luka[0] + 10, hd.luka[1] - 34] });
     s += pg.say({ p: 'a', x: 528, y: 100, w: 170, size: 27, text: 'Chat, we’re locked in. Stocky arc.', who: 'ZANE', tail: [hd.zane[0] + 10, hd.zane[1] - 34] });
     s += pg.say({ p: 'a', x: 132, y: 252, text: 'Stocky?', who: 'LUKA', tail: [hd.luka[0] + 4, hd.luka[1] - 30], size: 27 });

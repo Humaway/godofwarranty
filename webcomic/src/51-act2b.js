@@ -90,7 +90,8 @@ page(13, {
     // where a note typed live (the reader leaving the tab and coming back) would go; the rot leaves room for it
     b += `<g class="pB13-roth" data-y="${n(ny)}" data-k="${notes.length}" data-fs="${fs}" data-lh="${lh}" data-ah="${L.ah}"></g>`;
     b += rotPatch({ x: B[0] + B[2], y: B[1], box: [B[0] + B[2] - 210, B[1], 210, 96], reach: 120, count: 24, size: 15, seed: 'p13w0', grow: 4 });
-    s += pg.panel('b', B, b, { desc: 'Screen insert: the interaction notes, author ID JGAUNT, typing themselves in flat rep shorthand. Rot spreads across the window as each note lands.' });
+    // guided view holds on the notes until they have landed (they type faster there; see mount)
+    s += pg.panel('b', B, b, { desc: 'Screen insert: the interaction notes, author ID JGAUNT, typing themselves in flat rep shorthand. Rot spreads across the window as each note lands.', guided: [{ focus: B, lock: 6500 }] });
 
     // 3: the call record that never ends
     let c = R(Cc[0], Cc[1], Cc[2], Cc[3], '#C9D0D6') + R(Cc[0], Cc[1], Cc[2], 34, '#56606B') + Tx(Cc[0] + 12, Cc[1] + 24, 'CALL RECORD', 18, '#EEF2F5', '', FONTS.mono);
@@ -209,6 +210,8 @@ page(13, {
     lines.forEach((l) => { l.textContent = ''; });
     eLine.textContent = '';
     const r = rng('p13type');
+    // on a phone the reader taps on at a few seconds a stop, so the same human rhythm runs ~2.5x faster
+    const sp = ctx.mode === 'guided' ? 0.4 : 1;
     let li = 0, ci = 0, bDone = false, eStarted = false;
     const finishB = () => { if (bDone) return; bDone = true; lines.forEach((l, i) => { l.textContent = full[i]; land(+l.dataset.n); }); };
     // the notes type at an uneven, human speed: bursts, hesitations, a pause at each full stop
@@ -222,12 +225,12 @@ page(13, {
         const nn = +L.dataset.n;
         li++; ci = 0;
         const nxt = lines[li];
-        if (!nxt || +nxt.dataset.n !== nn) { land(nn); ctx.after(360 + r() * 360, typeB); }
-        else ctx.after(40, typeB);
+        if (!nxt || +nxt.dataset.n !== nn) { land(nn); ctx.after((360 + r() * 360) * sp, typeB); }
+        else ctx.after(40 * sp, typeB);
         return;
       }
       const ch = t[ci - 1];
-      ctx.after(ch === '.' || ch === ',' ? 110 + r() * 170 : ch === ' ' ? 16 + r() * 50 : 8 + r() * r() * 80, typeB);
+      ctx.after((ch === '.' || ch === ',' ? 110 + r() * 170 : ch === ' ' ? 16 + r() * 50 : 8 + r() * r() * 80) * sp, typeB);
     };
     // panel 5: the typo is what makes it a person
     const x0 = +eLine.getAttribute('x');
@@ -252,7 +255,9 @@ page(13, {
       ctx.after(ctx.mode === 'guided' ? 700 : 1400, step);
     };
     if (ctx.mode === 'guided') {
-      ctx.onPanel('b', () => ctx.after(500, typeB));
+      ctx.onPanel('b', () => ctx.after(400, typeB));
+      // moving on before the notes have landed lands them all, so nothing is left half-typed
+      ctx.onPanel('c', finishB);
       // reaching panel 5 finishes the notes at once (the reader has moved on) and starts the ghost typing
       ctx.onPanel('e', () => { finishB(); typeE(); });
     } else ctx.after(900, typeB);
@@ -717,6 +722,8 @@ page(16, {
     // the ticker
     s += `<g class="bl cap" data-p="a" style="--i:${pg.bal++}">${R(48, 1386, 340, 64, 'rgba(0,0,0,.35)')}${R(42, 1378, 340, 64, C.ink, st(C.y, 2))}<text class="ft-m pB16-tick" x="62" y="1422" font-size="30" fill="${C.y}">4,013 … 4,014 … 4,015</text></g>`;
     pg.lines.push({ who: 'CAPTION', text: '4,013 … 4,014 … 4,015' });
+    // §10: 13–18 the rot reaches the edges; on the splash it creeps in from the page edge, away from the reveal
+    s += pB_gutRot(392, 1446, 'p16g1', { reach: 60, count: 24, delay: 3 }) + pB_gutRot(1000, 1130, 'p16g2', { reach: 70, count: 26, delay: 5 }) + pB_gutRot(0, 330, 'p16g3', { reach: 55, count: 20, delay: 7 });
     // guided: one long, slow push down the aisle — first the voice, then the figure under the beam
     pg.stop('j', [150, 90, 740, 960], { move: 'creep', hold: 1500, lock: 1500 });
     pg.stop('k', [446, 380, 230, 380], { move: 'creep', lock: 1200 });

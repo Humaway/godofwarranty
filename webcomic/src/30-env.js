@@ -217,10 +217,11 @@ function cafe63(box, o = {}) {
   if (o.steam) s += `<g class="fx-steam">${Pa(`M${n(x + w * 0.77)} ${n(y + h * 0.37)}q-8 -14 0 -26q8 -12 0 -24`, 'none', st('#EEE', 3, 'opacity=".55"'))}${Pa(`M${n(x + w * 0.8)} ${n(y + h * 0.37)}q8 -12 0 -24q-6 -10 2 -22`, 'none', st('#EEE', 2.5, 'opacity=".45"'))}</g>`;
   if (o.order) s += R(x + w * 0.64, y + h * 0.2, w * 0.3, h * 0.1, '#0B0B0B', st('#444', 1.2)) + Tx(x + w * 0.79, y + h * 0.275, 'ORDER READY', h * 0.055, '#7CFF9A', 'text-anchor="middle" class="lit"', FONTS.mono);
   // tables and chairs
-  const tables = [[0.14, 0.78], [0.34, 0.84], [0.5, 0.74]];
+  const tables = [[0.1, 0.8], [0.27, 0.86], [0.43, 0.76], [0.56, 0.88]];
   tables.forEach(([tx, ty], i) => {
     const cx = x + w * tx, cy = y + h * ty;
-    if (o.full) s += customer({ x: cx + (i % 2 ? 22 : -22), y: cy + h * 0.16, s: h * 0.0011, kind: CUSTOMER_ORDER[(i + 2) % 8], seed: `cafe${i}`, flip: i % 2 === 0, ticket: false, faceOp: 0.85 });
+    // full: two Customers at every table, perfectly still, all turned toward the store
+    if (o.full) [-1, 1].forEach((side, k) => { s += customer({ x: cx + side * w * 0.045, y: cy + h * 0.13, s: h * 0.00105, kind: CUSTOMER_ORDER[(i * 2 + k + 2) % 8], seed: `cafe${i}${k}`, flip: side < 0, ticket: false, faceOp: 0.85, wet: false }); });
     s += E(cx, cy, w * 0.07, h * 0.02, '#5A4632', st(C.ink, 1.6)) + Ln(cx, cy, cx, cy + h * 0.14, '#222', 3);
     if (o.cups) s += R(cx - 5, cy - 12, 10, 11, '#F4F0E6', st(C.ink, 1.2)) + `<g class="fx-steam" style="animation-delay:${i * 0.4}s">${Pa(`M${n(cx)} ${n(cy - 14)}q-5 -8 0 -16q5 -8 0 -16`, 'none', st('#F2F2F2', 2, 'opacity=".6"'))}</g>`;
   });

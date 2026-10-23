@@ -66,7 +66,7 @@ function renderPage(num, env) {
     body +
     `<rect width="1000" height="1500" fill="url(#grain)" opacity="${P.gutter === 'black' ? 0.35 : 0.6}" pointer-events="none"/>` +
     `<text class="ft-x folio" x="${P.side === 'left' ? 34 : 966}" y="1490" font-size="20" fill="${folioCol}" text-anchor="middle">${num}</text>` +
-    `<path class="gmask" fill="${C.ink}" fill-rule="evenodd" d="" pointer-events="none"/>` +
+    `<path class="gmask" fill="${{ white: C.paper, warm: '#FFF4E0', whitegrey: C.gutterGrey, grey: C.gutterGrey }[P.gutter] || C.ink}" fill-rule="evenodd" d="" pointer-events="none"/>` +
     `</svg>`;
   return { svg, pg };
 }
@@ -113,29 +113,51 @@ function animateVB(svg, from, to, dur, mask) {
 
 const MOVE_MS = { cut: 0, glide: 380, creep: 1500, unfold: 1200 };
 
+const inBox = (f, c) => c[0] >= f[0] && c[0] <= f[0] + f[2] && c[1] >= f[1] && c[1] <= f[1] + f[3];
+
 function buildStops(pg) {
   const out = [];
   const [W, H] = leafSize();
   for (const p of pg.panels) {
     const b = pg.bbox[p.id] || p.box;
     if (p.guided) { p.guided.forEach((g) => out.push(Object.assign({ p: p.id, move: 'glide' }, g, { focus: g.focus || b }))); continue; }
-    // split wide panels so lettering stays at least ~13 CSS px
+    // split wide panels so lettering stays at least ~14 CSS px
     const [x, y, w, h] = b;
     const sc = Math.min(W / (w + 28), H / (h + 28));
     const k = Math.min(3, Math.max(1, Math.ceil(0.54 / sc - 0.05)));
     if (k === 1 || w < h * 0.9) { out.push({ p: p.id, focus: b, move: 'glide' }); continue; }
     const seg = w / k;
-    for (let i = 0; i < k; i++) out.push({ p: p.id, focus: [x + seg * i - (i ? seg * 0.08 : 0), y, seg * (i ? 1.08 : 1.04), h], move: 'glide' });
+    const segs = [];
+    for (let i = 0; i < k; i++) { const x0 = x + seg * i - (i ? seg * 0.08 : 0); segs.push([x0, x0 + seg * (i ? 1.08 : 1.04)]); }
+    // never cut a balloon in half: widen the segment that holds its centre to take all of it
+    for (const bl of pg.bls.filter((q) => q.p === p.id)) {
+      const cx = bl.box[0] + bl.box[2] / 2;
+      const sg = segs.find((q) => cx >= q[0] && cx <= q[1]) || segs[0];
+      sg[0] = Math.max(x, Math.min(sg[0], bl.box[0] - 8));
+      sg[1] = Math.min(x + w, Math.max(sg[1], bl.box[0] + bl.box[2] + 8));
+    }
+    segs.forEach((sg) => out.push({ p: p.id, focus: [sg[0], y, sg[1] - sg[0], h], move: 'glide' }));
   }
   return out;
 }
 
+// Balloons appear as the reader reaches them: when a stop that frames a balloon is shown, or when its
+// panel is finished. A balloon outside every stop of its panel appears with the panel's first stop.
 function revealBalloons(L, upto) {
-  const ids = [];
-  for (const s of L.stops.slice(0, upto + 1)) if (!ids.includes(s.p)) ids.push(s.p);
+  const stops = L.stops, first = {}, last = {};
+  stops.forEach((st2, i) => { if (!(st2.p in first)) first[st2.p] = i; last[st2.p] = i; });
   let j = 0;
   L.svg.querySelectorAll('.bl').forEach((b) => {
-    const on = ids.includes(b.dataset.p);
+    const p = b.dataset.p;
+    let on;
+    if (!(p in first)) on = upto >= stops.length - 1;
+    else if (last[p] <= upto) on = true;
+    else if (first[p] > upto) on = false;
+    else {
+      const c = b.dataset.c ? b.dataset.c.split(',').map(Number) : null;
+      const own = stops.filter((st2) => st2.p === p);
+      on = !c || !own.some((st2) => inBox(st2.focus, c)) || stops.slice(0, upto + 1).some((st2) => st2.p === p && inBox(st2.focus, c));
+    }
     if (on && !b.classList.contains('on')) { b.style.setProperty('--j', j++); b.classList.add('on'); }
     if (!on) b.classList.remove('on');
   });
@@ -152,7 +174,7 @@ function goStop(k, o = {}) {
   const from = o.from || Reader.vb;
   animateVB(L.svg, from, vb, o.move ? MOVE_MS[o.move] : MOVE_MS[s.move] ?? 380, s.focus.map((v, i) => v + (i < 2 ? -6 : 12)));
   revealBalloons(L, k);
-  if (s.lock) Reader.lockUntil = Date.now() + s.lock;
+  if (s.lock || s.hold) Reader.lockUntil = Date.now() + Math.max(s.lock || 0, s.hold || 0);
   if (!o.silent) L.ctx && L.ctx._panel(s.p);
   progress();
   debugInfo();
@@ -172,6 +194,17 @@ function guidedFull(on) {
 
 function makeCtx(i, el, svg, pg, o) {
   const timers = [], cleanups = [], panelCbs = {}, firedPanels = new Set();
+  // In spread mode the right-hand page mounts while the reader is still on the left one, so its timed
+  // beats wait until the reader gets there: the pointer reaches it, they touch it, or a reading-time
+  // estimate for the left page runs out.
+  let reached = !(Reader.mode === 'spread' && el.classList.contains('right') && o.leftChars != null);
+  const waiting = [];
+  const whenReached = (fn) => (reached ? fn() : waiting.push(fn));
+  const reach = () => {
+    if (reached || ctx.dead) return;
+    reached = true;
+    waiting.splice(0).forEach((f) => { try { f(); } catch (e) { console.error(e); } });
+  };
   const ctx = {
     num: i, el, svg, pg, mode: Reader.mode, dead: false,
     reduced: reducedMotion(), revisit: pg.revisit, visits: Save.d.visits, second: Save.d.finished || Save.d.visits > 1,
@@ -183,15 +216,20 @@ function makeCtx(i, el, svg, pg, o) {
     every(ms, fn) { const t = setInterval(() => !ctx.dead && fn(), ms); timers.push(() => clearInterval(t)); return t; },
     // fires after the reader has spent `ms` on the page with it visible (pauses when the tab is hidden)
     dwell(ms, fn) {
-      let acc = 0, last = performance.now();
-      const t = setInterval(() => {
-        const now = performance.now();
-        if (!document.hidden) acc += now - last;
-        last = now;
-        if (acc >= ms) { clearInterval(t); if (!ctx.dead) fn(); }
-      }, 200);
-      timers.push(() => clearInterval(t));
+      whenReached(() => {
+        let acc = 0, last = performance.now();
+        const t = setInterval(() => {
+          const now = performance.now();
+          if (!document.hidden) acc += now - last;
+          last = now;
+          if (acc >= ms) { clearInterval(t); if (!ctx.dead) fn(); }
+        }, 200);
+        timers.push(() => clearInterval(t));
+      });
     },
+    // true once the reader has reached this page (always true outside spread mode's right-hand page)
+    isReached: () => reached,
+    whenReached,
     raf(fn) {
       let id = 0;
       const loop = (t) => { if (ctx.dead || fn(t) === false) return; id = requestAnimationFrame(loop); };
@@ -202,7 +240,7 @@ function makeCtx(i, el, svg, pg, o) {
     // Run fn when panel p is reached: in guided view when its stop is shown, otherwise `delay` ms after mount.
     onPanel(p, fn, delay = 0) {
       if (Reader.mode === 'guided') (panelCbs[p] = panelCbs[p] || []).push(fn);
-      else ctx.after(delay, fn);
+      else whenReached(() => ctx.after(delay, fn));
     },
     _panel(p) { if (firedPanels.has(p)) return; firedPanels.add(p); (panelCbs[p] || []).forEach((f) => f()); },
     onTap(sel, fn) { ctx._taps.push([sel, fn]); },
@@ -256,6 +294,14 @@ function makeCtx(i, el, svg, pg, o) {
     onCleanup(fn) { cleanups.push(fn); },
     _cleanup() { ctx.dead = true; timers.forEach((f) => f()); cleanups.forEach((f) => f()); },
   };
+  if (!reached) {
+    const readMs = clamp(5000 + o.leftChars * 55, 7000, 25000);
+    ctx.after(readMs, reach);
+    ctx.on('pointer', (p) => { if (p.leaf === el) reach(); });
+    const down = () => reach();
+    el.addEventListener('pointerdown', down);
+    cleanups.push(() => el.removeEventListener('pointerdown', down));
+  }
   return ctx;
 }
 
@@ -312,7 +358,12 @@ function show(o = {}) {
   const ids = Reader.mode === 'spread' ? [Reader.idx - (Reader.idx % 2), Reader.idx - (Reader.idx % 2) + 1] : [Reader.idx];
   if (Reader.mode === 'spread') Reader.idx = ids[0];
   book.className = `mode-${Reader.mode}${o.turn ? ' turning' : ''}`;
-  ids.forEach((i, k) => mountLeaf(i, Reader.mode === 'spread' ? (k ? 'right' : 'left') : 'single', o));
+  ids.forEach((i, k) => {
+    const left = Reader.leaves[0];
+    // the right-hand page learns how much there is to read on the left one (see makeCtx)
+    const leftChars = Reader.mode === 'spread' && k === 1 && left && left.pg ? left.pg.lines.filter((l) => !l.desc).reduce((a, l) => a + String(l.text).length, 0) : null;
+    mountLeaf(i, Reader.mode === 'spread' ? (k ? 'right' : 'left') : 'single', leftChars == null ? o : Object.assign({}, o, { leftChars }));
+  });
   if (o.turn) setTimeout(() => book.classList.remove('turning'), 400);
 
   if (Reader.mode === 'guided') {
@@ -595,7 +646,8 @@ function hotspot(target, e) {
     const hot = el.closest && el.closest('[data-hot]');
     if (!hot) continue;
     const k = hot.dataset.hot;
-    if (k === 'drag') continue; // an unmoved press on a drag area is an ordinary tap
+    // an unmoved press on a drag area: in guided view it may fill the screen, so it still turns the page
+    if (k === 'drag') { if (Reader.mode === 'guided') continue; return true; }
     if (k === 'ollie') { foundOllie(hot); return true; }
     if (k === 'heal') { healBalloon(hot); return true; }
     return true; // holds handle themselves
