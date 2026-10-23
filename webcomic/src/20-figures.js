@@ -180,14 +180,15 @@ function faceParts(view, expr, o, c) {
     }
   };
   s += eye(E1, 1) + eye(E2, k2);
-  const brow = ([x, y], k, inner) => {
-    const by = y - 9;
-    const t = { flat: [0, 0], raised: [-3, -3], worried: [inner * 3, -inner * 3], angry: [-inner * 3, inner * 3] }[brows] || [0, 0];
-    const yl = by + (inner < 0 ? t[0] : t[1]), yr = by + (inner < 0 ? t[1] : t[0]);
+  // brows: [inner end, outer end] offsets; the inner end is the one nearer the nose
+  const brow = ([x, y], k, innerRight) => {
     if (brows === 'none') return '';
+    const by = y - 9;
+    const [inn, out] = { flat: [0, 0], raised: [-3, -3], worried: [-3.5, 1], angry: [3.5, -1.5] }[brows] || [0, 0];
+    const yl = by + (innerRight ? out : inn), yr = by + (innerRight ? inn : out);
     return Pa(`M${n(x - 5 * k)} ${n(yl)}L${n(x + 5 * k)} ${n(yr)}`, 'none', st(C.ink, 2.6));
   };
-  s += brow(E1, 1, 1) + brow(E2, k2, -1);
+  s += brow(E1, 1, true) + brow(E2, k2, false);
   if (side) s += Pa('M20 -1 L26 9 L19 11', 'none', st(C.ink, 2.2));
   else s += Pa('M0 4 L-2 9 L2 10', 'none', st(C.ink, 1.8));
   const [mx, my] = M;

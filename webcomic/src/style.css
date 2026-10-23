@@ -27,7 +27,7 @@ button { font: inherit; color: inherit; }
 #stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
 #book { position: relative; display: flex; align-items: center; justify-content: center; }
 .leaf { position: relative; width: var(--lw); height: var(--lh); overflow: hidden; background: var(--ink); flex: none; }
-.leaf > svg.page { display: block; width: 100%; height: 100%; }
+.leaf > svg.page { display: block; width: 100%; height: 100%; touch-action: none; }
 #app[data-mode="guided"] .leaf { background: var(--gut); }
 #app[data-mode="guided"] #book { width: 100vw; height: 100vh; height: 100dvh; }
 #app[data-mode="guided"] .leaf { width: 100vw; height: 100vh; height: 100dvh; }

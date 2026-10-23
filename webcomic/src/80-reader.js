@@ -75,9 +75,11 @@ function renderPage(num, env) {
 
 function leafSize() { const r = $('#book').getBoundingClientRect(); return [innerWidth, innerHeight, r]; }
 
-function fitVB(f, pad = 14) {
+function fitVB(f, pad) {
   const [W, H] = leafSize();
   const A = W / H;
+  // very tall, narrow screens (a folded Fold's cover screen) frame panels a little tighter
+  if (pad == null) pad = A < 0.5 ? 6 : 14;
   let [x, y, w, h] = [f[0] - pad, f[1] - pad, f[2] + pad * 2, f[3] + pad * 2];
   if (w / h > A) { const nh = w / A; y -= (nh - h) / 2; h = nh; } else { const nw = h * A; x -= (nw - w) / 2; w = nw; }
   return [x, y, w, h];
@@ -120,7 +122,7 @@ function buildStops(pg) {
     // split wide panels so lettering stays at least ~13 CSS px
     const [x, y, w, h] = b;
     const sc = Math.min(W / (w + 28), H / (h + 28));
-    const k = Math.min(3, Math.max(1, Math.ceil(0.46 / sc - 0.05)));
+    const k = Math.min(3, Math.max(1, Math.ceil(0.54 / sc - 0.05)));
     if (k === 1 || w < h * 0.9) { out.push({ p: p.id, focus: b, move: 'glide' }); continue; }
     const seg = w / k;
     for (let i = 0; i < k; i++) out.push({ p: p.id, focus: [x + seg * i - (i ? seg * 0.08 : 0), y, seg * (i ? 1.08 : 1.04), h], move: 'glide' });
@@ -575,21 +577,30 @@ function healBalloon(el) {
   el._heal = setTimeout(() => el.classList.remove('healed'), 2600);
 }
 
+// Taps find hotspots anywhere under the finger, not just the top-most element: lighting and
+// vignette layers are often drawn over a hidden Ollie.
 function hotspot(target, e) {
-  const hot = target.closest && target.closest('[data-hot]');
-  for (const L of Reader.leaves) {
-    if (!L.ctx || !L.el.contains(target)) continue;
-    for (const [sel, fn] of L.ctx._taps) {
-      const t = target.closest(sel);
-      if (t && L.el.contains(t)) { fn(t, e); return true; }
+  const stack = e && document.elementsFromPoint ? document.elementsFromPoint(e.clientX, e.clientY) : [];
+  if (!stack.includes(target)) stack.unshift(target);
+  for (const el of stack) {
+    for (const L of Reader.leaves) {
+      if (!L.ctx || !L.el.contains(el)) continue;
+      for (const [sel, fn] of L.ctx._taps) {
+        const t = el.closest && el.closest(sel);
+        if (t && L.el.contains(t)) { fn(t, e); return true; }
+      }
     }
   }
-  if (!hot) return false;
-  const k = hot.dataset.hot;
-  if (k === 'ollie') { foundOllie(hot); return true; }
-  if (k === 'heal') { healBalloon(hot); return true; }
-  if (k === 'drag') return false; // an unmoved press on a drag area is an ordinary tap
-  return true; // holds handle themselves
+  for (const el of stack) {
+    const hot = el.closest && el.closest('[data-hot]');
+    if (!hot) continue;
+    const k = hot.dataset.hot;
+    if (k === 'drag') continue; // an unmoved press on a drag area is an ordinary tap
+    if (k === 'ollie') { foundOllie(hot); return true; }
+    if (k === 'heal') { healBalloon(hot); return true; }
+    return true; // holds handle themselves
+  }
+  return false;
 }
 
 let _down = null, _lastTap = 0, _tapTimer = 0, _idle = 0;
@@ -602,13 +613,36 @@ function wakeUI() {
 
 function bindInput() {
   const stage = $('#stage');
+  // pinch (two fingers) toggles the panel and the whole page in guided view
+  const touches = new Map();
+  let pinch0 = 0;
   stage.addEventListener('pointerdown', (e) => {
     _down = { x: e.clientX, y: e.clientY, t: Date.now(), target: e.target };
+    if (e.pointerType === 'touch') {
+      touches.set(e.pointerId, [e.clientX, e.clientY]);
+      if (touches.size === 2) { const [a, b] = [...touches.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); }
+    }
   });
+  stage.addEventListener('pointermove', (e) => {
+    if (!touches.has(e.pointerId)) return;
+    touches.set(e.pointerId, [e.clientX, e.clientY]);
+    if (touches.size !== 2 || !pinch0) return;
+    const [a, b] = [...touches.values()];
+    const r = Math.hypot(a[0] - b[0], a[1] - b[1]) / pinch0;
+    if (r < 0.75 || r > 1.33) {
+      if (Reader.mode === 'guided') guidedFull(r < 1);
+      pinch0 = 0;
+      _down = null;
+    }
+  });
+  const lift = (e) => { touches.delete(e.pointerId); if (touches.size < 2) pinch0 = 0; };
+  stage.addEventListener('pointercancel', lift);
+  stage.addEventListener('pointerup', lift);
   stage.addEventListener('pointerup', (e) => {
     wakeUI();
     const d = _down;
     _down = null;
+    if (e.pointerType === 'touch' && touches.size > 0) return; // another finger is still down: part of a pinch
     // a real drag is its own gesture; a tap on a drag area still turns the page
     if (!d || (Reader.dragging && Reader.dragMoved)) return;
     if (e.target.closest && e.target.closest('.leaf-checkin, .leaf-end, input, button, a, label')) return;
